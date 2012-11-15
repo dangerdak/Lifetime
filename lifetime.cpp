@@ -30,7 +30,6 @@ void read_data(double meas[][2]) {
 
 //calculate prob distribution P and output to file
 void pdf(const double tau, double meas[][2]) {
-	
 	ofstream fitfile;
 	fitfile.open("fitfunction.txt");
 
@@ -44,16 +43,22 @@ void pdf(const double tau, double meas[][2]) {
 	for (int k = 0; k < 10000; k++) {
 		double t = meas[k][0];
 		double sigma = meas[k][1];
-		double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
 		
-		double P = exp((sigma * sigma)/(2 * tau * tau) - (t / tau)) * erfc(err_input) / (2 * tau);
-		fitfile << t << " " << sigma << " " << P << endl;
+		fitfile << t << " " << sigma << " " << get_P << endl;
 	}
 
 	fitfile.close();
 
 }
 
-//Find NLL(tau)
-void nll(double meas[][2]) {
+//function to find P for a given measurement
+double get_P(double tau, double t, double sigma) {
+	double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
+	double P = exp((sigma * sigma)/(2 * tau * tau) - (t / tau)) * erfc(err_input) / (2 * tau);
 
+	return P;
+}
+
+//function to find NLL as a function of tau
+void nll(double meas[][2]) {
+	
