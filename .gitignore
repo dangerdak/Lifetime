@@ -11,3 +11,8 @@
 *.lai
 *.la
 *.a
+
+# My file types to ignore
+*.qti
+*.qti~
+*.txt
