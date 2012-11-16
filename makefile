@@ -6,3 +6,6 @@ main.o: main.cpp lifetime.h
 
 lifetime.o: lifetime.cpp lifetime.h
 	g++ -g -Wall -I/usr/local/include -c lifetime.cpp
+
+clean:
+	rm -rf *.o lifetime

@@ -10,3 +10,8 @@ double get_P(const double tau, const double t, const double sigma);
 
 //function to output nll for different tau values
 void nll_tau(const double meas[][2]);
+
+//function to find nll for given tau, t, sigma
+double get_nll(const double tau, const double meas[][2]);
+
+	

@@ -78,19 +78,21 @@ void nll_tau(const double meas[][2]) {
 
 	double tau_k = tau_min;
 	for(int k = 0; k < k_max; k++) { //run through tau values	
-		double nll = 0.00;
-		for(int i = 0; i < 10000; i++) { //run through measurements
-			double t = abs(meas[i][0]);
-			double sigma = meas[i][1];
-
-			double P = get_P(tau_k, t, sigma);
-			nll -= log(P);
-		} //finish running through measurements
-		nllfile << tau_k << " " << nll << endl;	
+		nllfile << tau_k << " " << get_nll(tau_k, meas) << endl;	
 		tau_k += d_tau;
 	} //finish running through tau values
 	nllfile.close();
 }
 
-//find value of NLL for given tau, t, sigma
-double get_nll(const double tau, const double t, const double sigma) {
+//find value of NLL for given tau
+double get_nll(const double tau, const double meas[][2]) {
+	double nll = 0.00;
+		for(int i = 0; i < 10000; i++) { //run through measurements
+			double t = abs(meas[i][0]);
+			double sigma = meas[i][1];
+
+			double P = get_P(tau, t, sigma);
+			nll -= log(P);
+		} //finish running through measurements
+	return nll;
+}	
