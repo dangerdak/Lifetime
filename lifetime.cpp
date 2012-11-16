@@ -14,7 +14,7 @@ void read_data(double meas[][2]) {
 
 	//only proceed if datafile opened successfully
 	if (datafile.fail()) {
-		cout << "ERROR: read_data could not open datafile.txt \n";
+		cout << "ERROR: read_data could not open lifetime.txt \n";
 		exit(1);
 	}
 	
@@ -24,7 +24,7 @@ void read_data(double meas[][2]) {
 		      datafile >> meas[i][j];
 	      }
 	}
-	cout << meas[1][1]; //TEST	
+	cout << meas[2][1]; //TEST	
 	datafile.close();
 }
 
@@ -41,10 +41,10 @@ void pdf(const double tau, double meas[][2]) {
 
 	//find P for each measurement for a given tau and output into "fitfunction.txt"
 	for (int k = 0; k < 10000; k++) {
-		double t = meas[k][0];
+		double t = abs(meas[k][0]);
 		double sigma = meas[k][1];
 		
-		fitfile << t << " " << sigma << " " << get_P << endl;
+		fitfile << t << " " << sigma << " " << get_P(tau, t, sigma) << endl;
 	}
 
 	fitfile.close();
@@ -59,6 +59,33 @@ double get_P(double tau, double t, double sigma) {
 	return P;
 }
 
-//function to find NLL as a function of tau
-void nll(double meas[][2]) {
-	
+//function to find NLL
+void find_nll(double meas[][2]) {
+	double nll = 0.00;
+	double tau_k = 0.01;
+
+	ofstream nllfile;
+	nllfile.open("nllfunction.txt");
+
+	//only proceed if fitfile opened successfully
+	if (nllfile.fail()) {
+		cout << "ERROR: find_nll could not open nllfunction.txt \n";
+		exit(1);
+	}
+
+	for(int k = 0; k < 300; k++) { //run through tau values	
+		for(int i = 0; i < 10000; i++) { //run through measurements
+			if(tau_k != 0) {
+				double t = abs(meas[k][0]);
+				double sigma = meas[k][1];
+
+				double P = get_P(tau_k, t, sigma);
+				nll -= log10(P);
+			}
+		}
+		nllfile << tau_k << " " << nll << endl;	
+		tau_k += 0.005;
+		nll = 0;
+	}
+	nllfile.close();
+}
