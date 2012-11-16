@@ -16,7 +16,7 @@ int main() {
 	
 	read_data(meas);
 	pdf(tau, meas);
-	find_nll(meas);
+	nll_tau(meas);
 
 	return 0;
 }	

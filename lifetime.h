@@ -9,4 +9,4 @@ void pdf(const double tau, double meas[][2]);
 double get_P(double tau, double t, double sigma);
 
 //function to output nll for different tau values
-void find_nll(double meas[][2]);
+void nll_tau(double meas[][2]);

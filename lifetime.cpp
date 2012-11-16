@@ -59,10 +59,13 @@ double get_P(double tau, double t, double sigma) {
 	return P;
 }
 
-//function to find NLL
-void find_nll(double meas[][2]) {
-	double nll = 0.00;
-	double tau_k = 0.01;
+//function to output NLL for different tau values
+void nll_tau(double meas[][2]) {
+	double tau_min = 0.42;
+	double d_tau = 0.00001;
+	double tau_max = 0.44;
+	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
+	k_max = round(0.60 + k_max); //always round up so desired range is included 
 
 	ofstream nllfile;
 	nllfile.open("nllfunction.txt");
@@ -73,19 +76,19 @@ void find_nll(double meas[][2]) {
 		exit(1);
 	}
 
-	for(int k = 0; k < 300; k++) { //run through tau values	
+	double tau_k = tau_min;
+	for(int k = 0; k < k_max; k++) { //run through tau values	
+		double nll = 0.00;
 		for(int i = 0; i < 10000; i++) { //run through measurements
-			if(tau_k != 0) {
-				double t = abs(meas[k][0]);
-				double sigma = meas[k][1];
+			double t = abs(meas[i][0]);
+			double sigma = meas[i][1];
 
-				double P = get_P(tau_k, t, sigma);
-				nll -= log10(P);
-			}
-		}
+			double P = get_P(tau_k, t, sigma);
+			nll -= log(P);
+		} //finish running through measurements
 		nllfile << tau_k << " " << nll << endl;	
-		tau_k += 0.005;
-		nll = 0;
-	}
+		tau_k += d_tau;
+	} //finish running through tau values
 	nllfile.close();
 }
+
