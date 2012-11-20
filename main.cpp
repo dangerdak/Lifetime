@@ -10,13 +10,13 @@ using namespace std;
 
 int main() {
 
-	const double tau = 0.01;
-	const double sigma = 0.2;
+	//const double tau = 0.01;
+	//const double sigma = 0.2;
 	double meas[10000][2];
 	
 	read_data(meas);
 	//pdf(tau, sigma, meas);
 	//nll_tau(meas);
-
+	parabolic_minimiser(meas);
 	return 0;
 }	

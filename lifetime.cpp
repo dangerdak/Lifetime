@@ -61,9 +61,9 @@ double get_P(const double tau, const double t, const double sigma) {
 
 //function to output NLL for different tau values
 void nll_tau(const double meas[][2]) {
-	double tau_min = 0.4293;
+	double tau_min = 0.429;
 	double d_tau = 0.00000001;
-	double tau_max = 0.4303;
+	double tau_max = 0.431;
 	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
 	k_max = round(0.60 + k_max); //always round up so desired range is included 
 
@@ -98,42 +98,140 @@ double get_nll(const double tau, const double meas[][2]) {
 }	
 
 //parabolic minimiser
-//void parab_minimiser(const double meas[][2]) {
-//	double A, B;
-//	const double x0_init = 0.41;
-//	const double x1_init = 0.42;
-//	const double x2_init = 0.44;
-//
-//	double x0 = x0_init;
-//	double x1 = x1_init;
-//	double x2 = x2_init;
+void parabolic_minimiser(const double meas[][2]) {
+	double x[4];
+	double y[4];
+	
+	double A = 0;
+	double B = 0;
+	
+	//test for cosh(x)
+	x[0] = -1.5;
+	x[1] = 0.5;
+	x[2] = 1.0;
+	x[3] = 0.0;
+
+	y[0] = cosh(x[0]);
+	y[1] = cosh(x[1]);
+	y[2] = cosh(x[2]);
+	y[3] = cosh(x[3]);
+
+	double xmin = 1;
+	double xmin_prev = 5;
+	do {
+	find_coeffs(A, B, x, y);
+	get_min(A, B, x, y, meas);
+	xmin_prev = find_xmin(x, y);
+	discard_max(x, y);
+	xmin = find_xmin(x, y);
+	} 
+	//5 zeros - accurate to 5 d.p.
+	while (abs(xmin - xmin_prev) > 0.00001);
+
+	cout << "x-coordinate of minimum = " << xmin;
+}
+
+//initialise values for x and y arrays
+//void init(double x[], double y[], const double meas) {
+//	x[0] = 0.429;
+//	x[1] = 0.430;
+//	x[2] = 0.431;
+//	x[3] = 0.000;
 //	
-//	double y0 = get_nll(x0, meas);
-//	double y1 = get_nll(x1, meas);
-//	double y2 = get_nll(x2, meas);
-//	
-//	find_coeffs(A, B, x0, x1, x2, y0, y1, y2);
-//	double x3 = get_absc_min(A, B, x0, x1);
-//
-//	double y3 = get_nll(x3, meas);
+//	y[0] = get_nll(x[0], meas);
+//	y[1] = get_nll(x[1], meas);
+//	y[2] = get_nll(x[2], meas);
+//	y[3] = get_nll(x[3], meas);
 //}
 
+
 //find coefficients for the quadratic function which connects x0, x1, x2
-void find_coeffs(double &A, double &B, const double x0, const double x1, 
-		const double x2, const double y0, const double y1, const double y2) {
-	A = (y1 - y0) / (x1 - x0);
-	B = ((y2 - y0) / (x2 - x0) - (y1 - y0) / (x1 - x0)) / (x2 - x1);
+void find_coeffs(double &A, double &B, const double x[], const double y[]) {
+	A = (y[1] - y[0]) / (x[1] - x[0]);
+	B = ((y[2] - y[0]) / (x[2] - x[0]) - (y[1] - y[0]) / (x[1] - x[0])) / (x[2] - x[1]);
 	}
 	
 
-//get abscissa of the parabola's minimum
-//double get_absc_min(const double A, const double B, const double x0, const double x1) {
-//	double x3 = (B * (x0 + x1) - A) / (2 * B);
-//
-//	return x3;
-//}
+//get location of the parabola's minimum
+void get_min(const double A, const double B, double x[], double y[], const double meas[][2]) {
+	x[3] = (B * (x[0] + x[1]) - A) / (2 * B);
+	y[3] = get_nll(x[3], meas);
+}
 
-//find maximum y-value
-//double find_max(const double y0, const double y1, const double y2, const double y3) {
-//
-//}
+//find location of maximum
+double find_max(const double y[]) {
+	double y_max = y[0];
+	if (y[1] > y_max)
+		y_max = y[1];
+	if (y[2] > y_max)
+		y_max = y[2];
+	if (y[3] > y_max)
+		y_max = y[3];
+	return y_max;
+}
+
+//find x-value corresponding to minimum y 
+double find_xmin(const double y[], const double x[]) {
+	double y_min = y[0];
+	double x_min = x[0];
+	if (y[1] < y_min)
+		y_min = y[1];
+		x_min = x[1];
+	if (y[2] < y_min)
+		y_min = y[2];
+		x_min = x[2];
+	if (y[3] < y_min)
+		y_min = y[3];
+		x_min = x[3];
+	return x_min;	
+}
+
+//discard maximum y-value
+void discard_max(double x[], double y[]) {
+	double y_old[4];
+	for (int i = 0; i < 4; i++)
+		y_old[i] = y[i];
+
+	double x_old[4];
+	for (int i = 0; i < 4; i++)
+		x_old[i] = x[i];
+
+
+	double y_max = find_max(y_old);
+	if (y_max == y_old[0]) {
+		y[0] = y_old[1];
+		y[1] = y_old[2];
+		y[2] = y_old[3];
+
+		x[0] = x_old[1];
+		x[1] = x_old[2];
+		x[2] = x_old[3];
+	}
+	else if (y_max == y_old[1]) {
+		y[0] = y_old[0];
+		y[1] = y_old[2];
+		y[2] = y_old[3];
+
+		x[0] = x_old[0];
+		x[1] = x_old[2];
+		x[2] = x_old[3];
+	}
+	else if (y_max == y_old[2]) {
+		y[0] = y_old[0];
+		y[1] = y_old[1];
+		y[2] = y_old[3];
+
+		x[0] = x_old[0];
+		x[1] = x_old[1];
+		x[2] = x_old[3];
+	}
+	else if (y_max == y_old[3]) {
+		y[0] = y_old[0];
+		y[1] = y_old[1];
+		y[2] = y_old[2];
+
+		x[0] = x_old[0];
+		x[1] = x_old[1];
+		x[2] = x_old[2];
+	}
+}
