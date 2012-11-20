@@ -62,7 +62,7 @@ double get_P(const double tau, const double t, const double sigma) {
 //function to output NLL for different tau values
 void nll_tau(const double meas[][2]) {
 	double tau_min = 0.429;
-	double d_tau = 0.00000001;
+	double d_tau = 0.00001;
 	double tau_max = 0.431;
 	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
 	k_max = round(0.60 + k_max); //always round up so desired range is included 
@@ -109,6 +109,8 @@ void parabolic_minimiser(const double meas[][2]) {
 	int iterations =0;
 	double xmin;
 	double xmin_prev;
+
+	init(x, y, meas);
 	do {
 	find_coeffs(A, B, x, y);
 	xmin_prev = x[3];
@@ -118,7 +120,7 @@ void parabolic_minimiser(const double meas[][2]) {
 	iterations++;
 	} 
 	//5 zeros - accurate to 5 d.p.
-	while (abs(xmin - xmin_prev) > 0.0001);
+	while (abs(xmin - xmin_prev) > 0.000001);
 
 	cout << "x-coordinate of minimum = " << xmin << endl;
 	cout << "Number of iterations = " << iterations << endl;
@@ -126,10 +128,10 @@ void parabolic_minimiser(const double meas[][2]) {
 
 //initialise values for x and y arrays
 void init(double x[], double y[], const double meas[][2]) {
-	x[0] = 0.429;
-	x[1] = 0.430;
-	x[2] = 0.431;
-	x[3] = 0.000;
+	x[0] = 0.22;
+	x[1] = 0.55;
+	x[2] = 0.63;
+	x[3] = 6.000;
 	
 	y[0] = get_nll(x[0], meas);
 	y[1] = get_nll(x[1], meas);
