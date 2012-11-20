@@ -30,9 +30,6 @@ void parabolic_minimiser(const double meas[][2]);
 
 //find maximum y-value
 double find_max(const double y[]);
-
-//find x-value corresponding to minimum y 
-double find_xmin(const double y[], const double x[]);
 	
 //discard maximum y-value
 void discard_max(double x[], double y[]);

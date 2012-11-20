@@ -109,26 +109,30 @@ void parabolic_minimiser(const double meas[][2]) {
 	x[0] = -1.5;
 	x[1] = 0.5;
 	x[2] = 1.0;
-	x[3] = 0.0;
+	x[3] = 100;
 
 	y[0] = cosh(x[0]);
 	y[1] = cosh(x[1]);
 	y[2] = cosh(x[2]);
 	y[3] = cosh(x[3]);
 
-	double xmin = 1;
-	double xmin_prev = 5;
+	//count number of iterations
+	int iterations =0;
+	double xmin;
+	double xmin_prev;
 	do {
 	find_coeffs(A, B, x, y);
+	xmin_prev = x[3];
 	get_min(A, B, x, y, meas);
-	xmin_prev = find_xmin(x, y);
+	xmin = x[3]; 
 	discard_max(x, y);
-	xmin = find_xmin(x, y);
+	iterations++;
 	} 
 	//5 zeros - accurate to 5 d.p.
-	while (abs(xmin - xmin_prev) > 0.00001);
+	while (abs(xmin - xmin_prev) > 0.0001);
 
-	cout << "x-coordinate of minimum = " << xmin;
+	cout << "x-coordinate of minimum = " << xmin << endl;
+	cout << "Number of iterations = " << iterations << endl;
 }
 
 //initialise values for x and y arrays
@@ -155,7 +159,8 @@ void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 //get location of the parabola's minimum
 void get_min(const double A, const double B, double x[], double y[], const double meas[][2]) {
 	x[3] = (B * (x[0] + x[1]) - A) / (2 * B);
-	y[3] = get_nll(x[3], meas);
+	//y[3] = get_nll(x[3], meas);
+	y[3] = cosh(x[3]);
 }
 
 //find location of maximum
@@ -168,22 +173,6 @@ double find_max(const double y[]) {
 	if (y[3] > y_max)
 		y_max = y[3];
 	return y_max;
-}
-
-//find x-value corresponding to minimum y 
-double find_xmin(const double y[], const double x[]) {
-	double y_min = y[0];
-	double x_min = x[0];
-	if (y[1] < y_min)
-		y_min = y[1];
-		x_min = x[1];
-	if (y[2] < y_min)
-		y_min = y[2];
-		x_min = x[2];
-	if (y[3] < y_min)
-		y_min = y[3];
-		x_min = x[3];
-	return x_min;	
 }
 
 //discard maximum y-value
