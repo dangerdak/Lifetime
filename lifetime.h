@@ -18,6 +18,9 @@ double get_nll(const double tau, const double meas[][2]);
 //initialise x and y values
 void init(double x[], double y[], const double meas[][2]);
 
+//initialise values for x and y arrays for cosh(x)
+void init_cosh(double x[], double y[]);
+	
 //find coefficients for parabola eqn
 void find_coeffs(double &A, double &B, const double x[], const double y[]);
 
@@ -33,6 +36,3 @@ double find_max(const double y[]);
 	
 //discard maximum y-value
 void discard_max(double x[], double y[]);
-	
-	
-	

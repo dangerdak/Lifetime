@@ -104,17 +104,6 @@ void parabolic_minimiser(const double meas[][2]) {
 	
 	double A = 0;
 	double B = 0;
-	
-	//test for cosh(x)
-	x[0] = -1.5;
-	x[1] = 0.5;
-	x[2] = 1.0;
-	x[3] = 100;
-
-	y[0] = cosh(x[0]);
-	y[1] = cosh(x[1]);
-	y[2] = cosh(x[2]);
-	y[3] = cosh(x[3]);
 
 	//count number of iterations
 	int iterations =0;
@@ -136,18 +125,30 @@ void parabolic_minimiser(const double meas[][2]) {
 }
 
 //initialise values for x and y arrays
-//void init(double x[], double y[], const double meas) {
-//	x[0] = 0.429;
-//	x[1] = 0.430;
-//	x[2] = 0.431;
-//	x[3] = 0.000;
-//	
-//	y[0] = get_nll(x[0], meas);
-//	y[1] = get_nll(x[1], meas);
-//	y[2] = get_nll(x[2], meas);
-//	y[3] = get_nll(x[3], meas);
-//}
+void init(double x[], double y[], const double meas[][2]) {
+	x[0] = 0.429;
+	x[1] = 0.430;
+	x[2] = 0.431;
+	x[3] = 0.000;
+	
+	y[0] = get_nll(x[0], meas);
+	y[1] = get_nll(x[1], meas);
+	y[2] = get_nll(x[2], meas);
+	y[3] = get_nll(x[3], meas);
+}
 
+//initialise values for x and y arrays for cosh(x)
+void init_cosh(double x[], double y[]) {
+	x[0] = -1.5;
+	x[1] = 0.5;
+	x[2] = 1.0;
+	x[3] = 100;
+
+	y[0] = cosh(x[0]);
+	y[1] = cosh(x[1]);
+	y[2] = cosh(x[2]);
+	y[3] = cosh(x[3]);
+}
 
 //find coefficients for the quadratic function which connects x0, x1, x2
 void find_coeffs(double &A, double &B, const double x[], const double y[]) {
@@ -159,8 +160,8 @@ void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 //get location of the parabola's minimum
 void get_min(const double A, const double B, double x[], double y[], const double meas[][2]) {
 	x[3] = (B * (x[0] + x[1]) - A) / (2 * B);
-	//y[3] = get_nll(x[3], meas);
-	y[3] = cosh(x[3]);
+	y[3] = get_nll(x[3], meas);
+	//y[3] = cosh(x[3]);
 }
 
 //find location of maximum
