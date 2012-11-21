@@ -61,9 +61,9 @@ double get_P(const double tau, const double t, const double sigma) {
 
 //function to output NLL for different tau values
 void nll_tau(const double meas[][2]) {
-	double tau_min = 0.429;
+	double tau_min = 0.42;
 	double d_tau = 0.00001;
-	double tau_max = 0.431;
+	double tau_max = 0.44;
 	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
 	k_max = round(0.60 + k_max); //always round up so desired range is included 
 
@@ -104,13 +104,19 @@ void parabolic_minimiser(const double meas[][2]) {
 	
 	double A = 0;
 	double B = 0;
+	
+	//declare array for standard deviation
+	//tau_plus and tau_minus
+	double stdv[2];
 
 	//count number of iterations
 	int iterations =0;
 	double xmin;
 	double xmin_prev;
 
+	//initialise x and y values
 	init(x, y, meas);
+
 	do {
 	find_coeffs(A, B, x, y);
 	xmin_prev = x[3];
@@ -120,10 +126,15 @@ void parabolic_minimiser(const double meas[][2]) {
 	iterations++;
 	} 
 	//5 zeros - accurate to 5 d.p.
-	while (abs(xmin - xmin_prev) > 0.000001);
+	while (abs(xmin - xmin_prev) > 0.00001);
 
 	cout << "x-coordinate of minimum = " << xmin << endl;
+	cout << "Minimum NLL = " << y[3] << endl;
 	cout << "Number of iterations = " << iterations << endl;
+	
+	//get_stdv(stdv, x[3], y[3], meas);
+	//cout << "tau_plus = " << stdv[0] << endl;
+	//cout << "tau_minus = " << stdv[1] << endl;
 }
 
 //initialise values for x and y arrays
@@ -226,4 +237,30 @@ void discard_max(double x[], double y[]) {
 		x[1] = x_old[1];
 		x[2] = x_old[2];
 	}
+}
+
+//function finds standard deviation
+void get_stdv(double stdv[], const double tau, const double nll, const double meas[][2]) {
+	const double nll_plus = nll + 0.5;
+	const double nll_minus = nll - 0.5;
+
+	double tau_plus = tau;
+	double tau_minus = tau;
+	double nll_tmp;
+
+	//find tau value corresponding to nll_plus
+	do {
+		nll_tmp = get_nll(tau, meas);
+		tau_plus += 0.000001;
+	}
+	while (nll_tmp <= nll_plus);
+	stdv[0] = tau_plus;
+
+	//find tau value corresponding to nll_minus
+	do {
+		nll_tmp = get_nll(tau, meas);
+		tau_minus -= 0.000001;
+	}
+	while (nll_tmp >= nll_minus);
+	stdv[1] = tau_minus;
 }

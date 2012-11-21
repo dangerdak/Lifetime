@@ -36,3 +36,8 @@ double find_max(const double y[]);
 	
 //discard maximum y-value
 void discard_max(double x[], double y[]);
+
+//function finds standard deviation
+void get_stdv(double stdv[], const double tau, const double nll, 
+		const double meas[][2]);
+	
