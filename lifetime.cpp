@@ -129,7 +129,6 @@ void parabolic_minimiser(const double meas[][2]) {
 	
 	//declare array for standard deviation
 	//tau_plus and tau_minus
-	double stdv[2];
 
 	//count number of iterations
 	int iterations =0;
