@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib> //so I can use "exit"
 #include <iostream>
+#include <gsl/gsl_multimin.h>
 
 using namespace std;
 
@@ -127,9 +128,6 @@ void parabolic_minimiser(const double meas[][2]) {
 	double A = 0;
 	double B = 0;
 	
-	//declare array for standard deviation
-	//tau_plus and tau_minus
-
 	//count number of iterations
 	int iterations =0;
 	double xmin;
@@ -330,4 +328,80 @@ void discard_max(double x[], double y[]) {
 	}
 }
 
+///////////////////////////////////////////////////////////////////
 
+//MULTIDIMENSIONAL MINIMISER
+
+//define starting point, and put into gsl vector v
+double init_a = 0.7;
+double init_tau = 0.4;
+gsl_vector *v = gsl_vector_alloc (2);
+gsl_vector_set(v, 0, init_a);
+gsl_vector_set(v, 1, init_tau);
+
+//put t and sigma into array
+double array[2];
+void *params = array;
+array[0] = t;
+array[1] = sigma;
+
+//define my function so gsl function can use it
+//IS THIS NECESSARY?
+double my_f(const gsl_vector *v, void *params) {
+	double a, tau;
+	double *p = (double *)params;
+
+	a = gsl_vector_get(v, 0);
+	tau = gsl_vector_get(v, 1);
+
+	return get_P_total(a, tau, p[0], p[1]);
+}	
+
+//gradient of f, df = (df/dtau, df/da)
+void my_df(const gsl_vector *v, void *params, gsl_vector *df) {
+	double a, tau;
+	double *p = (double *)params;
+
+	a = gsl_vector_get(v, 0);
+	tau = gsl_vector_get(v, 1);
+	
+	gsl_vector_set(df, 0, get_dfda(a, tau, t, sigma));
+	get_vector_set(df, 1, get_dfdtau(a, tau, t, sigma));
+}
+
+//compute both f and df together
+void my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df) {
+	*f = my_f(a, params);
+	my_df(a, params, df);
+}
+
+//initialise function
+gsl_multimin_function_fdf my_func;
+double p[2] = {t, sigma};
+my_func.n = 2;
+my_func.f = &my_f;
+myfunc_df = &my_df;
+my_func.fdf = &my_fdf;
+my_func.params = (void *)p;
+
+
+//partial derivative wrt a
+double get_dfda(const double tau, const double t, const double sigma) {
+	dfda = get_P_sig - get_P_bkg;
+	
+	return dfda;
+}
+
+//partial derivative wrt tau
+double get_dfdtau(const double a, const double tau, const double t, const double sigma) {
+	const double pi = atan(1) * 4;
+	double exp_in = (sigma * sigma) / (2 * tau * tau) 
+		- 0.5 * (sigma / tau - t / sigma) * (sigma / tau - t / sigma) - t / tau;
+	
+	dfdtau = - a * get_P_sig(tau, t, sigma) / tau 
+		- a * sigma * sigma * get_P_sig(tau, t, sigma) / (tau * tau * tau) 
+		+ a * t * get_P_sig(tau, t, sigma) / (tau * tau) 
+		+ a * sigma * exp(exp_in) / (sqrt(2 * pi) * r * r * r);
+
+	return dfdtau;
+}

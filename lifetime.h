@@ -13,7 +13,7 @@ double get_P_sig(const double tau, const double t, const double sigma);
 double get_P_bkg(const double t, const double sigma);
 
 //find P for background and signal for a given measurement
-double get_P_total(const double tau, const double t, const double sigma);
+double get_P_total(const double a, const double tau, const double t, const double sigma);
 	
 //function to output nll for different tau values
 void nll_tau(const double meas[][2]);
