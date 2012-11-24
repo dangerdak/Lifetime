@@ -36,3 +36,13 @@ double find_max(const double y[]);
 	
 //discard maximum y-value
 void discard_max(double x[], double y[]);
+
+
+//bisection method to find tau_plus and tau_minus from NLL
+double bisect(const double nll_des, const double tau_outer, const double tau_inner, 
+		const double meas[][2]);
+
+//find standard deviations based on tau_plus & tau_minus
+void get_stdev(double stdev[], const double xmin, const double y, 
+		const double meas[][2]);
+

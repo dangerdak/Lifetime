@@ -112,18 +112,92 @@ void parabolic_minimiser(const double meas[][2]) {
 
 	init(x, y, meas);
 	do {
-	find_coeffs(A, B, x, y);
-	xmin_prev = x[3];
-	get_min(A, B, x, y, meas);
-	xmin = x[3]; 
-	discard_max(x, y);
-	iterations++;
+		find_coeffs(A, B, x, y);
+		xmin_prev = x[3];
+		get_min(A, B, x, y, meas);
+		xmin = x[3]; 
+		discard_max(x, y);
+		iterations++;
 	} 
-	//5 zeros - accurate to 5 d.p.
+	//specify convergence criterion
 	while (abs(xmin - xmin_prev) > 0.000001);
 
 	cout << "x-coordinate of minimum = " << xmin << endl;
 	cout << "Number of iterations = " << iterations << endl;
+	cout << "Minimum value of NLL = " << y[3] << endl;
+
+	double stdev[2];
+	get_stdev(stdev, xmin, y[3], meas);
+	cout << "stdev_plus = " << stdev[0] << endl;
+	cout << "stdev_minus = " << stdev[1] << endl;
+	}
+
+//find standard deviations based on tau_plus & tau_minus
+void get_stdev(double stdev[], const double xmin, const double y, 
+		const double meas[][2]) {
+	const double nll_stdev = y + 0.5;
+	
+	//find tau_plus
+	double tau_left = xmin;
+	double tau_right = 5.5;
+	double tau_plus = bisect(nll_stdev, tau_left, tau_right, meas);
+	cout << "tau_plus = " << tau_plus << endl;
+	
+	//find tau_minus
+	tau_left = 0.05;
+	tau_right = xmin;
+	double tau_minus = bisect(nll_stdev, tau_left, tau_right, meas);
+	cout << "tau_minus = " << tau_minus << endl;
+
+	double stdev_plus = tau_plus - xmin;
+	double stdev_minus = xmin - tau_minus;
+	stdev[0] = stdev_plus;
+	stdev[1] = stdev_minus;
+
+}
+
+//bisection method to find tau_plus and tau_minus from NLL
+double bisect(const double nll_des, double tau_left, double tau_right, 
+		const double meas[][2]) {
+	double tau_mid;
+	double nll_mid;
+	const double tolerance = 0.001;
+	double i_max = 40;
+	
+	double nll_left = get_nll(tau_left, meas);
+	double nll_right = get_nll(tau_right, meas);
+	
+	for (int i = 0; i < i_max; i++) {
+		tau_mid = (tau_left + tau_right) / 2;
+		nll_mid = get_nll(tau_mid, meas);
+
+		//check if nll is within tolerance of desired nll value
+		if (abs(nll_mid - nll_des) <= tolerance)
+			break;
+		//if finding tau_minus
+		else if (nll_left > nll_right) {
+			if (nll_mid < nll_des)
+				tau_right = tau_mid;
+			else tau_left = tau_mid;
+		}
+		//if finding tau_plus
+		else {
+			if (nll_mid > nll_des)
+				tau_right = tau_mid;
+			else tau_left = tau_mid;
+		}
+
+		// quit & error message if large number of iterations but no solution
+		if (i == i_max - 1) {
+			cout << "No solution after " << i_max << " iterations" << endl;
+			cout << "NLL_mid = " << nll_mid << endl;
+			cout << "tau_mid = " << tau_mid << endl;
+			return 100;
+		}
+	}
+	//check nll value
+	cout << "The nll value settled on is " << nll_mid << endl;
+	return tau_mid;
 }
 
 //initialise values for x and y arrays
@@ -156,7 +230,7 @@ void init_cosh(double x[], double y[]) {
 void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 	A = (y[1] - y[0]) / (x[1] - x[0]);
 	B = ((y[2] - y[0]) / (x[2] - x[0]) - (y[1] - y[0]) / (x[1] - x[0])) / (x[2] - x[1]);
-	}
+}
 	
 
 //get location of the parabola's minimum
@@ -227,3 +301,5 @@ void discard_max(double x[], double y[]) {
 		x[2] = x_old[2];
 	}
 }
+
+
