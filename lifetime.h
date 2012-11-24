@@ -6,9 +6,15 @@ void read_data(double meas[][2]);
 //- allows exploration of pdf for different taus and sigmas
 void pdf(const double tau, const double sigma, const double meas[][2]); 
 
-//function to get P for given tau and measurement
-double get_P(const double tau, const double t, const double sigma);
+//function to get P (of signal) for given tau and measurement
+double get_P_sig(const double tau, const double t, const double sigma);
 
+//find P for background for a given measurement
+double get_P_bkg(const double t, const double sigma);
+
+//find P for background and signal for a given measurement
+double get_P_total(const double tau, const double t, const double sigma);
+	
 //function to output nll for different tau values
 void nll_tau(const double meas[][2]);
 
@@ -37,7 +43,6 @@ double find_max(const double y[]);
 //discard maximum y-value
 void discard_max(double x[], double y[]);
 
-
 //bisection method to find tau_plus and tau_minus from NLL
 double bisect(const double nll_des, const double tau_outer, const double tau_inner, 
 		const double meas[][2]);
@@ -45,4 +50,3 @@ double bisect(const double nll_des, const double tau_outer, const double tau_inn
 //find standard deviations based on tau_plus & tau_minus
 void get_stdev(double stdev[], const double xmin, const double y, 
 		const double meas[][2]);
-

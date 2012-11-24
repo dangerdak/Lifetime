@@ -44,28 +44,50 @@ void pdf(const double tau, const double sigma, const double meas[][2]) {
 		double t = abs(meas[k][0]);
 //		double sigma = meas[k][1]; - want to see effect of different sigmas
 		
-		fitfile << t << " " << get_P(tau, t, sigma) << endl;
+		fitfile << t << " " << get_P_sig(tau, t, sigma) << endl;
 	}
 
 	fitfile.close();
 
 }
 
-//function to find P for a given measurement
-double get_P(const double tau, const double t, const double sigma) {
+//function to find P (of signal) for a given measurement
+double get_P_sig(const double tau, const double t, const double sigma) {
 	double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
-	double P = exp((sigma * sigma)/(2 * tau * tau) - (t / tau)) * erfc(err_input) / (2 * tau);
+	double P_sig = exp((sigma * sigma)/(2 * tau * tau) - 
+			(t / tau)) * erfc(err_input) / (2 * tau);
 
-	return P;
+	return P_sig;
 }
+
+//find P for background for a given measurement
+double get_P_bkg(const double t, const double sigma) {
+	const double pi = atan(1) *4;
+	double P_bkg = (exp((-t * t) / (2 * sigma * sigma))) / (sigma * sqrt(2 * pi));
+
+	return P_bkg;
+}
+
+//find P for background and signal for a given measurement
+double get_P_total(const double a, const double tau, const double t, const double sigma) {
+	double P_sig, P_bkg, P_tot;
+	P_sig = get_P_sig(tau, t, sigma);
+	P_bkg = get_P_bkg(t, sigma);
+	P_tot = a * P_sig + (1 - a) * P_bkg;
+	
+	return P_tot;
+}
+
 
 //function to output NLL for different tau values
 void nll_tau(const double meas[][2]) {
 	double tau_min = 0.429;
 	double d_tau = 0.00001;
 	double tau_max = 0.431;
-	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
-	k_max = round(0.60 + k_max); //always round up so desired range is included 
+	//find appropriate k_max for desired tau_max
+	double k_max = (tau_max - tau_min) / d_tau; 
+	//always round up so desired range is included 
+	k_max = round(0.60 + k_max); 
 
 	ofstream nllfile;
 	nllfile.open("nllfunction.txt");
@@ -91,8 +113,8 @@ double get_nll(const double tau, const double meas[][2]) {
 			double t = abs(meas[i][0]);
 			double sigma = meas[i][1];
 
-			double P = get_P(tau, t, sigma);
-			nll -= log(P);
+			double P_sig = get_P_sig(tau, t, sigma);
+			nll -= log(P_sig);
 		} //finish running through measurements
 	return nll;
 }	
