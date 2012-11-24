@@ -44,28 +44,50 @@ void pdf(const double tau, const double sigma, const double meas[][2]) {
 		double t = abs(meas[k][0]);
 //		double sigma = meas[k][1]; - want to see effect of different sigmas
 		
-		fitfile << t << " " << get_P(tau, t, sigma) << endl;
+		fitfile << t << " " << get_P_sig(tau, t, sigma) << endl;
 	}
 
 	fitfile.close();
 
 }
 
-//function to find P for a given measurement
-double get_P(const double tau, const double t, const double sigma) {
+//function to find P (of signal) for a given measurement
+double get_P_sig(const double tau, const double t, const double sigma) {
 	double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
-	double P = exp((sigma * sigma)/(2 * tau * tau) - (t / tau)) * erfc(err_input) / (2 * tau);
+	double P_sig = exp((sigma * sigma)/(2 * tau * tau) - 
+			(t / tau)) * erfc(err_input) / (2 * tau);
 
-	return P;
+	return P_sig;
 }
+
+//find P for background for a given measurement
+double get_P_bkg(const double t, const double sigma) {
+	const double pi = atan(1) *4;
+	double P_bkg = (exp((-t * t) / (2 * sigma * sigma))) / (sigma * sqrt(2 * pi));
+
+	return P_bkg;
+}
+
+//find P for background and signal for a given measurement
+double get_P_total(const double a, const double tau, const double t, const double sigma) {
+	double P_sig, P_bkg, P_tot;
+	P_sig = get_P_sig(tau, t, sigma);
+	P_bkg = get_P_bkg(t, sigma);
+	P_tot = a * P_sig + (1 - a) * P_bkg;
+	
+	return P_tot;
+}
+
 
 //function to output NLL for different tau values
 void nll_tau(const double meas[][2]) {
 	double tau_min = 0.42;
 	double d_tau = 0.00001;
-	double tau_max = 0.44;
-	double k_max = (tau_max - tau_min) / d_tau; //find appropriate k_max for desired tau_max
-	k_max = round(0.60 + k_max); //always round up so desired range is included 
+	double tau_max = 0.431;
+	//find appropriate k_max for desired tau_max
+	double k_max = (tau_max - tau_min) / d_tau; 
+	//always round up so desired range is included 
+	k_max = round(0.60 + k_max); 
 
 	ofstream nllfile;
 	nllfile.open("nllfunction.txt");
@@ -91,8 +113,8 @@ double get_nll(const double tau, const double meas[][2]) {
 			double t = abs(meas[i][0]);
 			double sigma = meas[i][1];
 
-			double P = get_P(tau, t, sigma);
-			nll -= log(P);
+			double P_sig = get_P_sig(tau, t, sigma);
+			nll -= log(P_sig);
 		} //finish running through measurements
 	return nll;
 }	
@@ -118,23 +140,93 @@ void parabolic_minimiser(const double meas[][2]) {
 	init(x, y, meas);
 
 	do {
-	find_coeffs(A, B, x, y);
-	xmin_prev = x[3];
-	get_min(A, B, x, y, meas);
-	xmin = x[3]; 
-	discard_max(x, y);
-	iterations++;
+		find_coeffs(A, B, x, y);
+		xmin_prev = x[3];
+		get_min(A, B, x, y, meas);
+		xmin = x[3]; 
+		discard_max(x, y);
+		iterations++;
 	} 
-	//5 zeros - accurate to 5 d.p.
-	while (abs(xmin - xmin_prev) > 0.00001);
+	//specify convergence criterion
+	while (abs(xmin - xmin_prev) > 0.000001);
 
 	cout << "x-coordinate of minimum = " << xmin << endl;
 	cout << "Minimum NLL = " << y[3] << endl;
 	cout << "Number of iterations = " << iterations << endl;
+	cout << "Minimum value of NLL = " << y[3] << endl;
+
+	double stdev[2];
+	get_stdev(stdev, xmin, y[3], meas);
+	cout << "stdev_plus = " << stdev[0] << endl;
+	cout << "stdev_minus = " << stdev[1] << endl;
+	}
+
+//find standard deviations based on tau_plus & tau_minus
+void get_stdev(double stdev[], const double xmin, const double y, 
+		const double meas[][2]) {
+	const double nll_stdev = y + 0.5;
 	
-	//get_stdv(stdv, x[3], y[3], meas);
-	//cout << "tau_plus = " << stdv[0] << endl;
-	//cout << "tau_minus = " << stdv[1] << endl;
+	//find tau_plus
+	double tau_left = xmin;
+	double tau_right = 5.5;
+	double tau_plus = bisect(nll_stdev, tau_left, tau_right, meas);
+	cout << "tau_plus = " << tau_plus << endl;
+	
+	//find tau_minus
+	tau_left = 0.05;
+	tau_right = xmin;
+	double tau_minus = bisect(nll_stdev, tau_left, tau_right, meas);
+	cout << "tau_minus = " << tau_minus << endl;
+
+	double stdev_plus = tau_plus - xmin;
+	double stdev_minus = xmin - tau_minus;
+	stdev[0] = stdev_plus;
+	stdev[1] = stdev_minus;
+
+}
+
+//bisection method to find tau_plus and tau_minus from NLL
+double bisect(const double nll_des, double tau_left, double tau_right, 
+		const double meas[][2]) {
+	double tau_mid;
+	double nll_mid;
+	const double tolerance = 0.001;
+	double i_max = 40;
+	
+	double nll_left = get_nll(tau_left, meas);
+	double nll_right = get_nll(tau_right, meas);
+	
+	for (int i = 0; i < i_max; i++) {
+		tau_mid = (tau_left + tau_right) / 2;
+		nll_mid = get_nll(tau_mid, meas);
+
+		//check if nll is within tolerance of desired nll value
+		if (abs(nll_mid - nll_des) <= tolerance)
+			break;
+		//if finding tau_minus
+		else if (nll_left > nll_right) {
+			if (nll_mid < nll_des)
+				tau_right = tau_mid;
+			else tau_left = tau_mid;
+		}
+		//if finding tau_plus
+		else {
+			if (nll_mid > nll_des)
+				tau_right = tau_mid;
+			else tau_left = tau_mid;
+		}
+
+		// quit & error message if large number of iterations but no solution
+		if (i == i_max - 1) {
+			cout << "No solution after " << i_max << " iterations" << endl;
+			cout << "NLL_mid = " << nll_mid << endl;
+			cout << "tau_mid = " << tau_mid << endl;
+			return 100;
+		}
+	}
+	//check nll value
+	cout << "The nll value settled on is " << nll_mid << endl;
+	return tau_mid;
 }
 
 //initialise values for x and y arrays
@@ -167,7 +259,7 @@ void init_cosh(double x[], double y[]) {
 void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 	A = (y[1] - y[0]) / (x[1] - x[0]);
 	B = ((y[2] - y[0]) / (x[2] - x[0]) - (y[1] - y[0]) / (x[1] - x[0])) / (x[2] - x[1]);
-	}
+}
 	
 
 //get location of the parabola's minimum
@@ -239,28 +331,4 @@ void discard_max(double x[], double y[]) {
 	}
 }
 
-//function finds standard deviation
-void get_stdv(double stdv[], const double tau, const double nll, const double meas[][2]) {
-	const double nll_plus = nll + 0.5;
-	const double nll_minus = nll - 0.5;
 
-	double tau_plus = tau;
-	double tau_minus = tau;
-	double nll_tmp;
-
-	//find tau value corresponding to nll_plus
-	do {
-		nll_tmp = get_nll(tau, meas);
-		tau_plus += 0.000001;
-	}
-	while (nll_tmp <= nll_plus);
-	stdv[0] = tau_plus;
-
-	//find tau value corresponding to nll_minus
-	do {
-		nll_tmp = get_nll(tau, meas);
-		tau_minus -= 0.000001;
-	}
-	while (nll_tmp >= nll_minus);
-	stdv[1] = tau_minus;
-}
