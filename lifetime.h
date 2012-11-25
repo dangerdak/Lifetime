@@ -50,3 +50,6 @@ double bisect(const double nll_des, const double tau_outer, const double tau_inn
 //find standard deviations based on tau_plus & tau_minus
 void get_stdev(double stdev[], const double xmin, const double y, 
 		const double meas[][2]);
+
+//MULTIDIMENSTIONAL MINIMISER
+void multidim_min(const double t, const double sigma);

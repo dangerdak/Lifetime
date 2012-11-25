@@ -332,18 +332,69 @@ void discard_max(double x[], double y[]) {
 
 //MULTIDIMENSIONAL MINIMISER
 
-//define starting point, and put into gsl vector v
-double init_a = 0.7;
-double init_tau = 0.4;
-gsl_vector *v = gsl_vector_alloc (2);
-gsl_vector_set(v, 0, init_a);
-gsl_vector_set(v, 1, init_tau);
+void multidim_min(const double t, const double sigma) {
+	size_t iter = 0;
+	int status;
 
-//put t and sigma into array
-double array[2];
-void *params = array;
-array[0] = t;
-array[1] = sigma;
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
+
+	//put t and sigma into array
+	double par[2];
+	void *params = par;
+	par[0] = t;
+	par[1] = sigma;
+
+	gsl_vector *x;
+	gsl_multimin_function_fdf my_func;
+
+	//initialise function
+	double p[2] = {t, sigma};
+	my_func.n = 2;
+	my_func.f = &my_f;
+	myfunc_df = &my_df;
+	my_func.fdf = &my_fdf;
+	my_func.params = (void *)p;
+
+	//define starting point, and put into gsl vector x
+	double init_a = 0.7;
+	double init_tau = 0.4;
+	*x = gsl_vector_alloc (2);
+	gsl_vector_set(x, 0, init_a);
+	gsl_vector_set(x, 1, init_tau);
+
+	//define type minimiser being used
+	T = gsl_multimin_fdfminimizer_conjugate_fr;
+	s = gsl_multimin_fdfminimizer_alloc(T, 2);
+
+	double step_size = 0.01; 
+	double tol = 0.0001
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, step_size, tol);
+
+	do {
+		iter++;
+		status = gsl_multimin_fdfminimizer_iterate(s);
+
+		if (status)
+			break;
+
+		status = gsl_multimin_test_gradient(s->gradient, 0.001);
+
+		if (status == GSL_SUCCESS)
+			printf ("Minimum found at: \n");
+		printf ("%5d %.5f %.5f %10.5f\n", iter, 
+				gsl_vector_get(s->x, 0),
+				gsl_vector_get(s->x, 1),
+				s->f);
+	}
+	while (status == GSL_CONTINUE && iter < 100);
+
+	//clear memory
+	gsl_multimin_fdf_minimizer_free(s);
+	gsl_vector_free(x);
+}
+
+
 
 //define my function so gsl function can use it
 //IS THIS NECESSARY?
@@ -374,16 +425,6 @@ void my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df) {
 	*f = my_f(a, params);
 	my_df(a, params, df);
 }
-
-//initialise function
-gsl_multimin_function_fdf my_func;
-double p[2] = {t, sigma};
-my_func.n = 2;
-my_func.f = &my_f;
-myfunc_df = &my_df;
-my_func.fdf = &my_fdf;
-my_func.params = (void *)p;
-
 
 //partial derivative wrt a
 double get_dfda(const double tau, const double t, const double sigma) {
