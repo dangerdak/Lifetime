@@ -156,6 +156,9 @@ void parabolic_minimiser(const double meas[][2]) {
 	get_stdev(stdev, xmin, y[3], meas);
 	cout << "stdev_plus = " << stdev[0] << endl;
 	cout << "stdev_minus = " << stdev[1] << endl;
+
+	//multidim
+	multidim_min(meas);
 	}
 
 //find standard deviations based on tau_plus & tau_minus
@@ -332,7 +335,7 @@ void discard_max(double x[], double y[]) {
 
 //MULTIDIMENSIONAL MINIMISER
 
-void multidim_min(const double t, const double sigma) {
+void multidim_min(const double meas[][2]) {
 	size_t iter = 0;
 	int status;
 
@@ -340,21 +343,21 @@ void multidim_min(const double t, const double sigma) {
 	gsl_multimin_fdfminimizer *s;
 
 	//put t and sigma into array
-	double par[2];
-	void *params = par;
-	par[0] = t;
-	par[1] = sigma;
+	//double par[2];
+	//void *params = par;
+	//par[0] = t;
+	//par[1] = sigma;
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 
 	//initialise function
-	double p[2] = {t, sigma};
+	//double p[2] = {t, sigma};
 	my_func.n = 2;
 	my_func.f = &my_f;
 	myfunc_df = &my_df;
 	my_func.fdf = &my_fdf;
-	my_func.params = (void *)p;
+	//my_func.params = (void *)p;
 
 	//define starting point, and put into gsl vector x
 	double init_a = 0.7;
@@ -382,67 +385,97 @@ void multidim_min(const double t, const double sigma) {
 
 		if (status == GSL_SUCCESS)
 			printf ("Minimum found at: \n");
-		printf ("%5d %.5f %.5f %10.5f\n", iter, 
+		printf ("%5d %.5f %.5f %10.5f\n", iter,
 				gsl_vector_get(s->x, 0),
 				gsl_vector_get(s->x, 1),
 				s->f);
+		while (status == GSL_CONTINUE && iter < 100);
+
+		//clear memory
+		gsl_multimin_fdfminimizer_free(s);
+		gsl_vector_free(x);
 	}
-	while (status == GSL_CONTINUE && iter < 100);
-
-	//clear memory
-	gsl_multimin_fdf_minimizer_free(s);
-	gsl_vector_free(x);
-}
-
 
 
 //define my function so gsl function can use it
 //IS THIS NECESSARY?
-double my_f(const gsl_vector *v, void *params) {
+double my_f(const gsl_vector *v, const double meas[][2]) {
 	double a, tau;
-	double *p = (double *)params;
 
 	a = gsl_vector_get(v, 0);
 	tau = gsl_vector_get(v, 1);
 
-	return get_P_total(a, tau, p[0], p[1]);
+	return get_nll_total(a, tau, meas);
 }	
 
+//find value of NLL for given tau and a
+double get_nll_total(const double a, const double tau, const double meas[][2]) {
+	double nll = 0.00;
+		for(int i = 0; i < 10000; i++) { //run through measurements
+			double t = abs(meas[i][0]);
+			double sigma = meas[i][1];
+
+			double P_tot = get_P_total(a, tau, t, sigma);
+			nll -= log(P_tot);
+		} //finish running through measurements
+	return nll;
+}
+
 //gradient of f, df = (df/dtau, df/da)
-void my_df(const gsl_vector *v, void *params, gsl_vector *df) {
+void my_df(const gsl_vector *v, const double meas[][2], gsl_vector *df) {
 	double a, tau;
-	double *p = (double *)params;
+	double dfda = 0;
+	double dfdtau = 0;
 
 	a = gsl_vector_get(v, 0);
 	tau = gsl_vector_get(v, 1);
+	find_derivs(dfda, dfdtau, a, tau, meas);
 	
-	gsl_vector_set(df, 0, get_dfda(a, tau, t, sigma));
-	get_vector_set(df, 1, get_dfdtau(a, tau, t, sigma));
+	gsl_vector_set(df, 0, dfda);
+	get_vector_set(df, 1, dfdtau);
 }
 
 //compute both f and df together
-void my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df) {
-	*f = my_f(a, params);
-	my_df(a, params, df);
+void my_fdf(const gsl_vector *x, double meas[][2], double *f, gsl_vector *df) {
+	*f = my_f(x, meas);
+	my_df(x, meas, df);
 }
 
-//partial derivative wrt a
-double get_dfda(const double tau, const double t, const double sigma) {
-	dfda = get_P_sig - get_P_bkg;
-	
-	return dfda;
+//partial derivatives of nll
+void find_derivs(double &dfda, double &dfdtau, const double a, 
+		const double tau, const double meas[][2]) {
+	//make sure both deriv totals always start at zero
+	dfda = 0;
+	dfdtau = 0;
+
+	for(int i = 0, i < 10000; i++) {
+		double t = meas[i][0];
+		double sigma = meas[i][1];
+
+		dfda -= get_dpda(a, tau, t, sigma);
+		dfdtau -= get_dpdtau(a, tau, t, sigma);
+	}
 }
 
-//partial derivative wrt tau
-double get_dfdtau(const double a, const double tau, const double t, const double sigma) {
+//partial derivative of P wrt to a
+double get_dpda(const double a, const double tau, const double t, const double sigma) {
+	dpda = (get_P_sig(tau, t, sigma) - get_P_bkg(t, sigma) 
+		/ get_P_total(a, tau, t, sigma);
+
+	return dpda;
+}
+
+//partial derivative of P wrt tau
+double get_dpdtau(const double a, const double tau, const double t, const double sigma) {
 	const double pi = atan(1) * 4;
 	double exp_in = (sigma * sigma) / (2 * tau * tau) 
 		- 0.5 * (sigma / tau - t / sigma) * (sigma / tau - t / sigma) - t / tau;
 	
-	dfdtau = - a * get_P_sig(tau, t, sigma) / tau 
+	dpdtau = - (a * get_P_sig(tau, t, sigma) / tau 
 		- a * sigma * sigma * get_P_sig(tau, t, sigma) / (tau * tau * tau) 
 		+ a * t * get_P_sig(tau, t, sigma) / (tau * tau) 
-		+ a * sigma * exp(exp_in) / (sqrt(2 * pi) * r * r * r);
+		+ a * sigma * exp(exp_in) / (sqrt(2 * pi) * r * r * r))
+			/ get_P_total(a, tau, t, sigma);
 
-	return dfdtau;
+	return dpdtau;
 }

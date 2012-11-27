@@ -52,4 +52,27 @@ void get_stdev(double stdev[], const double xmin, const double y,
 		const double meas[][2]);
 
 //MULTIDIMENSTIONAL MINIMISER
-void multidim_min(const double t, const double sigma);
+void multidim_min(const double meas[][2]);
+
+//define my function so gsl function can use it
+//IS THIS NECESSARY?
+double my_f(const gsl_vector *v, const double meas[][2]);
+
+//find value of NLL for given tau and a
+double get_nll_total(const double a, const double tau, const double meas[][2]);
+
+//gradient of f, df = (df/dtau, df/da)
+void my_df(const gsl_vector *v, const double meas[][2], gsl_vector *df);
+
+//compute both f and df together
+void my_fdf(const gsl_vector *x, double meas[][3], double *f, gsl_vector *df);
+
+//partial derivatives of nll
+void find_derivs(double &dfda, double &dfdtau, const double a, 
+		const double tau, const double meas[][2]);
+
+//partial derivative of P wrt to a
+double get_dpda(const double a, const double tau, const double t, const double sigma);
+
+//partial derivative of P wrt tau
+double get_dpdtau(const double a, const double tau, const double t, const double sigma);
