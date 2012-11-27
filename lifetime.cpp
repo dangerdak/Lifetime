@@ -151,18 +151,31 @@ void parabolic_minimiser(const double meas[][2]) {
 	cout << "Minimum NLL = " << y[3] << endl;
 	cout << "Number of iterations = " << iterations << endl;
 	cout << "Minimum value of NLL = " << y[3] << endl;
-	cout << "\nPARAMETERS FOR LAST PARABOLIC ESTIMATE" << endl;
-	cout << "x0 = " << x[0] << endl;
-	cout << "x1 = " << x[1] << endl;
-	cout << "y0 = " << y[0] << endl;
-	cout << "A = " << A << endl;
-	cout << "B = " << B << endl;
+
+	stdev_parabolic(A, B, xmin, x[0], x[1], y[0], y[3]);
+	
 	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
 	double stdev[2];
 	get_stdev(stdev, xmin, y[3], meas);
 	cout << "stdev_plus = " << stdev[0] << endl;
 	cout << "stdev_minus = " << stdev[1] << endl;
-	}
+}
+
+//find and output standard deviation based on latest parabolic estimate
+void stdev_parabolic(const double A, const double B, const double xmin, 
+		const double x0, const double x1, const double y0, 
+		const double y3) {
+	double nll_stdv = y3 + 0.5;
+	const double a = B;
+	const double b = A - B * x0 - B * x1;
+	const double c = B * x0 * x1 - A * x0 + y0 - nll_stdv;
+
+	double stdev = (-b + sqrt(b * b - 4 * a * c)) / (2 * a) - xmin;
+
+	cout << "\nSTANDARD DEVIATION BASED ON LATEST PARABOLIC ESTIMATE" << endl;
+	cout << "The NLL-value being used is " << nll_stdv << endl;
+	cout << "stdev_para = " << stdev << endl;
+}
 
 //find standard deviations based on tau_plus & tau_minus
 void get_stdev(double stdev[], const double xmin, const double y, 
@@ -228,7 +241,7 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 		}
 	}
 	//check nll value
-	cout << "The nll value settled on is " << nll_mid << endl;
+	cout << "The NLL-value settled on is " << nll_mid << endl;
 	return tau_mid;
 }
 
