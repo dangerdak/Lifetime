@@ -37,6 +37,11 @@ void get_min(const double A, const double B, double x[], double y[],
 //parabolic minimiser
 void parabolic_minimiser(const double meas[][2]);
 
+//find and output standard deviation based on latest parabolic estimate
+void stdev_parabolic(const double A, const double B, const double xmin, 
+		const double x0, const double x1, const double y0, 
+		const double y3); 
+
 //find maximum y-value
 double find_max(const double y[]);
 	
