@@ -146,11 +146,18 @@ void parabolic_minimiser(const double meas[][2]) {
 	//specify convergence criterion
 	while (abs(xmin - xmin_prev) > 0.000001);
 
+	cout << "\nPARABOLIC MINIMISATION" << endl;
 	cout << "x-coordinate of minimum = " << xmin << endl;
 	cout << "Minimum NLL = " << y[3] << endl;
 	cout << "Number of iterations = " << iterations << endl;
 	cout << "Minimum value of NLL = " << y[3] << endl;
-
+	cout << "\nPARAMETERS FOR LAST PARABOLIC ESTIMATE" << endl;
+	cout << "x0 = " << x[0] << endl;
+	cout << "x1 = " << x[1] << endl;
+	cout << "y0 = " << y[0] << endl;
+	cout << "A = " << A << endl;
+	cout << "B = " << B << endl;
+	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
 	double stdev[2];
 	get_stdev(stdev, xmin, y[3], meas);
 	cout << "stdev_plus = " << stdev[0] << endl;
