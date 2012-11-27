@@ -121,6 +121,7 @@ double get_nll(const double tau, const double meas[][2]) {
 
 //parabolic minimiser
 void parabolic_minimiser(const double meas[][2]) {
+	cout << "\nPARABOLIC MINIMISATION" << endl;
 	double x[4];
 	double y[4];
 	
@@ -146,25 +147,19 @@ void parabolic_minimiser(const double meas[][2]) {
 	//specify convergence criterion
 	while (abs(xmin - xmin_prev) > 0.000001);
 
-	cout << "\nPARABOLIC MINIMISATION" << endl;
-	cout << "x-coordinate of minimum = " << xmin << endl;
-	cout << "Minimum NLL = " << y[3] << endl;
-	cout << "Number of iterations = " << iterations << endl;
 	cout << "Minimum value of NLL = " << y[3] << endl;
+	cout << "tau-value at minimum = " << xmin << endl;
+	cout << "Number of iterations = " << iterations << endl;
 
 	stdev_parabolic(A, B, xmin, x[0], x[1], y[0], y[3]);
-	
-	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
-	double stdev[2];
-	get_stdev(stdev, xmin, y[3], meas);
-	cout << "stdev_plus = " << stdev[0] << endl;
-	cout << "stdev_minus = " << stdev[1] << endl;
+	stdev_nll(xmin, y[3], meas);
 }
 
 //find and output standard deviation based on latest parabolic estimate
 void stdev_parabolic(const double A, const double B, const double xmin, 
 		const double x0, const double x1, const double y0, 
 		const double y3) {
+	cout << "\nSTANDARD DEVIATION BASED ON LATEST PARABOLIC ESTIMATE" << endl;
 	double nll_stdv = y3 + 0.5;
 	const double a = B;
 	const double b = A - B * x0 - B * x1;
@@ -172,15 +167,15 @@ void stdev_parabolic(const double A, const double B, const double xmin,
 
 	double stdev = (-b + sqrt(b * b - 4 * a * c)) / (2 * a) - xmin;
 
-	cout << "\nSTANDARD DEVIATION BASED ON LATEST PARABOLIC ESTIMATE" << endl;
 	cout << "The NLL-value being used is " << nll_stdv << endl;
 	cout << "stdev_para = " << stdev << endl;
 }
 
-//find standard deviations based on tau_plus & tau_minus
-void get_stdev(double stdev[], const double xmin, const double y, 
-		const double meas[][2]) {
-	const double nll_stdev = y + 0.5;
+//find and output standard deviations based on tau_plus & tau_minus
+void stdev_nll(const double xmin, const double y3, const double meas[][2]) {
+	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
+	const double nll_stdev = y3 + 0.5;
+	double stdev[2];
 	
 	//find tau_plus
 	double tau_left = xmin;
@@ -198,6 +193,9 @@ void get_stdev(double stdev[], const double xmin, const double y,
 	double stdev_minus = xmin - tau_minus;
 	stdev[0] = stdev_plus;
 	stdev[1] = stdev_minus;
+
+	cout << "stdev_plus = " << stdev[0] << endl;
+	cout << "stdev_minus = " << stdev[1] << endl;
 
 }
 

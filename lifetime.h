@@ -52,6 +52,5 @@ void discard_max(double x[], double y[]);
 double bisect(const double nll_des, const double tau_outer, const double tau_inner, 
 		const double meas[][2]);
 
-//find standard deviations based on tau_plus & tau_minus
-void get_stdev(double stdev[], const double xmin, const double y, 
-		const double meas[][2]);
+//find and output standard deviations based on tau_plus & tau_minus
+void stdev_nll(const double xmin, const double y3, const double meas[][2]);
