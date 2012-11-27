@@ -165,6 +165,7 @@ void stdev_parabolic(const double A, const double B, const double xmin,
 	const double b = A - B * x0 - B * x1;
 	const double c = B * x0 * x1 - A * x0 + y0 - nll_stdv;
 
+	//use quadratic formula to find tau value at nll_stdv
 	double stdev = (-b + sqrt(b * b - 4 * a * c)) / (2 * a) - xmin;
 
 	cout << "The NLL-value being used is " << nll_stdv << endl;
@@ -181,13 +182,13 @@ void stdev_nll(const double xmin, const double y3, const double meas[][2]) {
 	double tau_left = xmin;
 	double tau_right = 5.5;
 	double tau_plus = bisect(nll_stdev, tau_left, tau_right, meas);
-	cout << "tau_plus = " << tau_plus << endl;
+	cout << "tau_plus = " << tau_plus << "\n" << endl;
 	
 	//find tau_minus
 	tau_left = 0.05;
 	tau_right = xmin;
 	double tau_minus = bisect(nll_stdev, tau_left, tau_right, meas);
-	cout << "tau_minus = " << tau_minus << endl;
+	cout << "tau_minus = " << tau_minus << "\n" << endl;
 
 	double stdev_plus = tau_plus - xmin;
 	double stdev_minus = xmin - tau_minus;
@@ -206,6 +207,7 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 	double nll_mid;
 	const double tolerance = 0.001;
 	double i_max = 40;
+	int evals;
 	
 	double nll_left = get_nll(tau_left, meas);
 	double nll_right = get_nll(tau_right, meas);
@@ -237,8 +239,10 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 			cout << "tau_mid = " << tau_mid << endl;
 			return 100;
 		}
+	evals = i;
 	}
 	//check nll value
+	cout << "Function evaluated " << evals + 1 << " times." << endl;
 	cout << "The NLL-value settled on is " << nll_mid << endl;
 	return tau_mid;
 }
