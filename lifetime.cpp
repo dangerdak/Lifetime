@@ -109,9 +109,11 @@ void nll_tau(const double meas[][2]) {
 //find value of NLL for given tau
 double get_nll(const double tau, const double meas[][2]) {
 	double nll = 0.00;
-		for(int i = 0; i < 10000; i++) { //run through measurements
-			double t = abs(meas[i][0]);
-			double sigma = meas[i][1];
+	int sample_size = 10000;
+		for(int i = 0; i < sample_size; i++) { //run through measurements
+			int index = i % 10000;
+			double t = abs(meas[index][0]);
+			double sigma = meas[index][1];
 
 			double P_sig = get_P_sig(tau, t, sigma);
 			nll -= log(P_sig);
