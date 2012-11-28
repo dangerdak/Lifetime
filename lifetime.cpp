@@ -354,16 +354,16 @@ void discard_max(double x[], double y[]) {
 //MULTIDIMENSIONAL MINIMISER
 void multimin() {
 	gsl_vector *v = gsl_vector_alloc(20000);
+	meas_to_vector(v);
 }
 //read measurements into a gsl_vector v
 //elements alternate between t and sigma
-void meas_to_vector() {
-	gsl_vector *v = gsl_vector_alloc(20000);
-	{
+void meas_to_vector(gsl_vector *v) {
+	
 	FILE *f = fopen("lifetime.txt", "r");
 	gsl_vector_fscanf(f, v);	
 	fclose(f);
-	}
+
 	for(int i = 0; i < 10; i++) {
 		printf("%g\n", gsl_vector_get(v,i));
 	}

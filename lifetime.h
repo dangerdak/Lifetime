@@ -60,5 +60,5 @@ void stdev_nll(const double xmin, const double y3, const double meas[][2]);
 void multimin();
 
 //read measurements into a gsl_vector which alternates between t and sigma
-void meas_to_vector();
+void meas_to_vector(gsl_vector *v);
 	
