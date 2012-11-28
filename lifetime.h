@@ -57,7 +57,7 @@ double bisect(const double nll_des, const double tau_outer, const double tau_inn
 void stdev_nll(const double xmin, const double y3, const double meas[][2]);
 
 //MULTIDIMENSIONAL MINIMISER
-void multimin(const double meas[][2]);
+int multimin(const double meas[][2]);
 
 //read measurements into a gsl_vector which alternates between t and sigma
 void meas_to_vector(gsl_vector *v);

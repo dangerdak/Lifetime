@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib> //so I can use "exit"
 #include <iostream>
+#include <gsl/gsl_multimin.h>
 
 using namespace std;
 
@@ -352,27 +353,84 @@ void discard_max(double x[], double y[]) {
 }
 
 //MULTIDIMENSIONAL MINIMISER
-void multimin(const double meas[][2]) {
+int multimin(const double meas[][2]) {
 	//put measured data into "v"
 	gsl_vector *v = gsl_vector_alloc(20000);
 	meas_to_vector(v);
-	
+
 	//put a and tau into "params"
-	double params[2];
+	double par[2];
 	double a_initial = 1;
 	double tau_initial = 0.5;
-	params[0] = a_initial;
-	params[1] = tau_initial;
+	par[0] = a_initial;
+	par[1] = tau_initial;
 
-	double nll = my_f(v, params);
+	const gsl_multimin_fminimizer_type *T = 
+		gsl_multimin_fminimizer_nmsimplex2;
+	gsl_multimin_fminimizer *s = NULL;
+	gsl_vector *ss, *x;
+	gsl_multimin_function minex_func;
+
+	size_t iter = 0;
+	int status;
+	double size;
+
+	// Starting point - WHAT SHOULD THE X-VALUES BE????
+	x = gsl_vector_alloc(2);
+	gsl_vector_set(x, 0, 0.7);
+	gsl_vector_set(x, 1, 0.5);
+
+	// Set initial step sizes to 1
+	ss = gsl_vector_alloc(2);
+	gsl_vector_set_all(ss, 1.0);
+
+	// Initialize method and iterate
+	minex_func.n = 2;
+	minex_func.f = my_f;
+	minex_func.params = par;
+
+	s = gsl_multimin_fminimizer_alloc(T, 2);
+	gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
+	
+	do {
+		iter++;
+		status = gsl_multimin_fminimizer_iterate(s);
+
+		if (status)
+			break;
+
+		size = gsl_multimin_fminimizer_size(s);
+		status = gsl_multimin_test_size(size, 0.01);
+
+		if (status == GSL_SUCCESS) {
+			printf ("Converged to minimum at:\n");
+		}
+		/*printf ("%5d %10.3e %10.3e f() = %7.3f size = %.3f\n", 
+				iter, 
+				gsl_vector_get(s->x, 0),
+				gsl_vector_get(s->x, 1),
+				s->fval, size);*/
+		cout << iter << " " << gsl_vector_get(s->x, 0) << " " << 
+			gsl_vector_get(s->x, 1) << " f()=" << s->fval << " size=" << 
+			size=size << endl;
+	}
+	while (status == GSL_CONTINUE && iter < 100);
+
+	gsl_vector_free(x);
+	gsl_vector_free(ss);
+	gsl_multimin_fminimizer_free(s);
+
+	return status;
+}
+
+	/*double nll = my_f(v, params);
 	cout << "NLL (for a = " << a_initial << " and tau = " << tau_initial <<
 		") = "<< nll << endl;
 	//TEST - compare to result from get_nll
 	cout << "get_nll (for tau = " << tau_initial << ") " << " = " << 
 		get_nll(tau_initial, meas) << endl;
+		*/
 
-	gsl_vector_free(v);
-}
 
 //define function to be minimised
 double my_f(const gsl_vector *v, void *params) {
