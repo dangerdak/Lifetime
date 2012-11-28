@@ -1,3 +1,5 @@
+#include <gsl/gsl_vector.h>
+
 //read in data
 void read_data(double meas[][2]);
 	
@@ -53,3 +55,10 @@ double bisect(const double nll_des, const double tau_outer, const double tau_inn
 
 //find and output standard deviations based on tau_plus & tau_minus
 void stdev_nll(const double xmin, const double y3, const double meas[][2]);
+
+//MULTIDIMENSIONAL MINIMISER
+void multimin();
+
+//read measurements into a gsl_vector which alternates between t and sigma
+void meas_to_vector();
+	

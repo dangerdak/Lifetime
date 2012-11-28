@@ -18,5 +18,6 @@ int main() {
 	//pdf(tau, sigma, meas);
 	//nll_tau(meas);
 	parabolic_minimiser(meas);
+	meas_to_vector();
 	return 0;
 }	
