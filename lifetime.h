@@ -1,4 +1,3 @@
-
 //read in data
 void read_data(double meas[][2]);
 	
