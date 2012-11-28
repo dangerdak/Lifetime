@@ -352,10 +352,47 @@ void discard_max(double x[], double y[]) {
 }
 
 //MULTIDIMENSIONAL MINIMISER
-void multimin() {
+void multimin(const double meas[][2]) {
+	//put measured data into "v"
 	gsl_vector *v = gsl_vector_alloc(20000);
 	meas_to_vector(v);
+	
+	//put a and tau into "params"
+	double params[2];
+	double a_initial = 1;
+	double tau_initial = 0.5;
+	params[0] = a_initial;
+	params[1] = tau_initial;
+
+	double nll = my_f(v, params);
+	cout << "NLL (for a = " << a_initial << " and tau = " << tau_initial <<
+		") = "<< nll << endl;
+	//TEST - compare to result from get_nll
+	cout << "get_nll (for tau = " << tau_initial << ") " << " = " << 
+		get_nll(tau_initial, meas) << endl;
+
+	gsl_vector_free(v);
 }
+
+//define function to be minimised
+double my_f(const gsl_vector *v, void *params) {
+	//double x,y <--- WHAT SHOULD THIS BE?
+	double *p = (double *)params;
+	double nll_total =0;
+
+	//i indexes time, j indexes sigma
+	for(int i = 0; i < 20000; i += 2) {
+		int j = i + 1;
+		double t = gsl_vector_get(v, i);
+		double sigma = gsl_vector_get(v, j);
+
+		double P_total = get_P_total(p[0], p[1], t, sigma);
+		nll_total -= log(P_total);
+	}
+
+	return nll_total;
+}
+
 //read measurements into a gsl_vector v
 //elements alternate between t and sigma
 void meas_to_vector(gsl_vector *v) {
@@ -364,8 +401,6 @@ void meas_to_vector(gsl_vector *v) {
 	gsl_vector_fscanf(f, v);	
 	fclose(f);
 
-	for(int i = 0; i < 10; i++) {
-		printf("%g\n", gsl_vector_get(v,i));
-	}
-	gsl_vector_free(v);
+	/*for(int i = 0; i < 10; i++) {
+		printf("%g\n", gsl_vector_get(v,i)); TEST */
 }

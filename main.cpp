@@ -18,6 +18,6 @@ int main() {
 	//pdf(tau, sigma, meas);
 	//nll_tau(meas);
 	parabolic_minimiser(meas);
-	multimin();
+	multimin(meas);
 	return 0;
 }	
