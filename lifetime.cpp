@@ -376,18 +376,24 @@ void multimin(const double meas[][2]) {
 
 //define function to be minimised
 double my_f(const gsl_vector *v, void *params) {
-	//double x,y <--- WHAT SHOULD THIS BE?
 	double *p = (double *)params;
-	double nll_total =0;
+	double nll_total = 0;
+	int index_sigma = 0;
+	int index_t = 0;
+	for(int i = 0; i < 10000; i++) {
+		index_t = 2 * i;
+		index_sigma = 2 * i + 1;
 
-	//i indexes time, j indexes sigma
-	for(int i = 0; i < 20000; i += 2) {
-		int j = i + 1;
-		double t = gsl_vector_get(v, i);
-		double sigma = gsl_vector_get(v, j);
+		double t = abs(gsl_vector_get(v, index_t));
+		double sigma = gsl_vector_get(v, index_sigma);
 
 		double P_total = get_P_total(p[0], p[1], t, sigma);
 		nll_total -= log(P_total);
+		/* //TEST - do t and sigma correspond to datafile
+		if (i > 9995) {
+		cout << "t = " << t << endl;
+		cout << "sigma = " << sigma << endl; 
+		}*/
 	}
 
 	return nll_total;
