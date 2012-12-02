@@ -9,79 +9,75 @@
 using namespace std;
 
 //read in data to 2-d array
-void read_data(double meas[][2]) {
-	ifstream datafile;
-	datafile.open("lifetime.txt");
+void read_data(double measurements[][2]) {
+	ifstream data_file;
+	data_file.open("lifetime.txt");
 
-	//only proceed if datafile opened successfully
-	if (datafile.fail()) {
-		cout << "ERROR: read_data could not open lifetime.txt \n";
+	//only proceed if data file opened successfully
+	if (data_file.fail()) {
+		cerr << "ERROR: read_data could not open lifetime.txt \n";
 		exit(1);
 	}
-	
-	//2d array "meas" to contain time and error for each measurement
-	for (int i = 0; i < 10000; i++) {
-	      for(int j = 0; j < 2; j++) {
-		      datafile >> meas[i][j];
-	      }
-	}
-//	cout << meas[2][1]; //TEST	
-	datafile.close();
+	//put time measurements in column 0
+	//and associated errors in column 1
+	for (int i = 0; i < 10000; i++) 
+	      for(int j = 0; j < 2; j++) 
+		      data_file >> measurements[i][j];
+	      
+	data_file.close();
 }
 
-//calculate prob distribution P and output to file
-void pdf(const double tau, const double sigma, const double meas[][2]) {
-	ofstream fitfile;
-	fitfile.open("fitfunction.txt");
+//calculate probability distribution P for given tau and sigma, and output to file
+void calculate_pdf(const double tau, const double sigma, 
+		const double measurements[][2]) {
+	ofstream fit_file;
+	fit_file.open("fit_function.txt");
 
-	//only proceed if fitfile opened successfully
-	if (fitfile.fail()) {
-		cout << "ERROR: fit could not open fitfunction.txt \n";
+	//only proceed if fit file opened successfully
+	if (fit_file.fail()) {
+		cerr << "ERROR: calculate_pdf could not open fit_function.txt \n";
 		exit(1);
 	}
-
-	//find P for each measurement for a given tau and output into "fitfunction.txt"
+	//find P for each measurement for given tau and sigma 
+	//and output into "fit_function.txt"
 	for (int k = 0; k < 10000; k++) {
-		double t = abs(meas[k][0]);
-//		double sigma = meas[k][1]; - want to see effect of different sigmas
-		
-		fitfile << t << " " << get_P_sig(tau, t, sigma) << endl;
+		double t = abs(measurements[k][0]);
+		fit_file << t << " " << get_P_signal(tau, t, sigma) << endl;
 	}
-
-	fitfile.close();
-
+	fit_file.close();
 }
 
-//function to find P (of signal) for a given measurement
-double get_P_sig(const double tau, const double t, const double sigma) {
+//find P for signal for a given measurement
+double get_P_signal(const double tau, const double t, const double sigma) {
 	double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
-	double P_sig = exp((sigma * sigma)/(2 * tau * tau) - 
+	double P_signal = exp((sigma * sigma)/(2 * tau * tau) - 
 			(t / tau)) * erfc(err_input) / (2 * tau);
 
-	return P_sig;
+	return P_signal;
 }
 
 //find P for background for a given measurement
-double get_P_bkg(const double t, const double sigma) {
-	const double pi = atan(1) *4;
-	double P_bkg = (exp((-t * t) / (2 * sigma * sigma))) / (sigma * sqrt(2 * pi));
+//M_PI is value of pi defined in gsl
+double get_P_background(const double t, const double sigma) {
+	double P_background = (exp((-t * t) / (2 * sigma * sigma))) / 
+		(sigma * sqrt(2 * M_PI));
 
-	return P_bkg;
+	return P_background;
 }
 
-//find P for background and signal for a given measurement
+//find total P for background and signal for a given measurement
 double get_P_total(const double a, const double tau, const double t, const double sigma) {
-	double P_sig, P_bkg, P_tot;
-	P_sig = get_P_sig(tau, t, sigma);
-	P_bkg = get_P_bkg(t, sigma);
-	P_tot = a * P_sig + (1 - a) * P_bkg;
+	double P_signal, P_background, P_total;
+	P_signal = get_P_signal(tau, t, sigma);
+	P_background = get_P_background(t, sigma);
+	P_total= a * P_signal + (1 - a) * P_background;
 	
-	return P_tot;
+	return P_total;
 }
 
 
 //function to output NLL for different tau values
-void nll_tau(const double meas[][2]) {
+void nll_tau(const double measurements[][2]) {
 	double tau_min = 0.42;
 	double d_tau = 0.00001;
 	double tau_max = 0.431;
@@ -93,37 +89,37 @@ void nll_tau(const double meas[][2]) {
 	ofstream nllfile;
 	nllfile.open("nllfunction.txt");
 
-	//only proceed if fitfile opened successfully
+	//only proceed if nll_file opened successfully
 	if (nllfile.fail()) {
-		cout << "ERROR: find_nll could not open nllfunction.txt \n";
+		cerr << "ERROR: find_nll could not open nllfunction.txt \n";
 		exit(1);
 	}
 
 	double tau_k = tau_min;
 	for(int k = 0; k < k_max; k++) { //run through tau values	
-		nllfile << tau_k << " " << get_nll(tau_k, meas) << endl;	
+		nllfile << tau_k << " " << get_nll(tau_k, measurements) << endl;	
 		tau_k += d_tau;
 	} //finish running through tau values
 	nllfile.close();
 }
 
 //find value of NLL for given tau
-double get_nll(const double tau, const double meas[][2]) {
+double get_nll(const double tau, const double measurements[][2]) {
 	double nll = 0.00;
 	int sample_size = 10000;
 		for(int i = 0; i < sample_size; i++) { //run through measurements
 			int index = i % 10000;
-			double t = abs(meas[index][0]);
-			double sigma = meas[index][1];
+			double t = abs(measurements[index][0]);
+			double sigma = measurements[index][1];
 
-			double P_sig = get_P_sig(tau, t, sigma);
-			nll -= log(P_sig);
+			double P_signal = get_P_signal(tau, t, sigma);
+			nll -= log(P_signal);
 		} //finish running through measurements
 	return nll;
 }	
 
 //parabolic minimiser
-void parabolic_minimiser(const double meas[][2]) {
+void parabolic_minimiser(const double measurements[][2]) {
 	cout << "\nPARABOLIC MINIMISATION" << endl;
 	double x[4];
 	double y[4];
@@ -137,12 +133,12 @@ void parabolic_minimiser(const double meas[][2]) {
 	double xmin_prev;
 
 	//initialise x and y values
-	init(x, y, meas);
+	init(x, y, measurements);
 
 	do {
 		find_coeffs(A, B, x, y);
 		xmin_prev = x[3];
-		get_min(A, B, x, y, meas);
+		get_min(A, B, x, y, measurements);
 		xmin = x[3]; 
 		discard_max(x, y);
 		iterations++;
@@ -155,7 +151,7 @@ void parabolic_minimiser(const double meas[][2]) {
 	cout << "Number of iterations = " << iterations << endl;
 
 	stdev_parabolic(A, B, xmin, x[0], x[1], y[0], y[3]);
-	stdev_nll(xmin, y[3], meas);
+	stdev_nll(xmin, y[3], measurements);
 }
 
 //find and output standard deviation based on latest parabolic estimate
@@ -176,7 +172,7 @@ void stdev_parabolic(const double A, const double B, const double xmin,
 }
 
 //find and output standard deviations based on tau_plus & tau_minus
-void stdev_nll(const double xmin, const double y3, const double meas[][2]) {
+void stdev_nll(const double xmin, const double y3, const double measurements[][2]) {
 	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
 	const double nll_stdev = y3 + 0.5;
 	double stdev[2];
@@ -184,13 +180,13 @@ void stdev_nll(const double xmin, const double y3, const double meas[][2]) {
 	//find tau_plus
 	double tau_left = xmin;
 	double tau_right = 5.5;
-	double tau_plus = bisect(nll_stdev, tau_left, tau_right, meas);
+	double tau_plus = bisect(nll_stdev, tau_left, tau_right, measurements);
 	cout << "tau_plus = " << tau_plus << "\n" << endl;
 	
 	//find tau_minus
 	tau_left = 0.05;
 	tau_right = xmin;
-	double tau_minus = bisect(nll_stdev, tau_left, tau_right, meas);
+	double tau_minus = bisect(nll_stdev, tau_left, tau_right, measurements);
 	cout << "tau_minus = " << tau_minus << "\n" << endl;
 
 	double stdev_plus = tau_plus - xmin;
@@ -205,19 +201,19 @@ void stdev_nll(const double xmin, const double y3, const double meas[][2]) {
 
 //bisection method to find tau_plus and tau_minus from NLL
 double bisect(const double nll_des, double tau_left, double tau_right, 
-		const double meas[][2]) {
+		const double measurements[][2]) {
 	double tau_mid;
 	double nll_mid;
 	const double tolerance = 0.001;
 	double i_max = 40;
 	int evals;
 	
-	double nll_left = get_nll(tau_left, meas);
-	double nll_right = get_nll(tau_right, meas);
+	double nll_left = get_nll(tau_left, measurements);
+	double nll_right = get_nll(tau_right, measurements);
 	
 	for (int i = 0; i < i_max; i++) {
 		tau_mid = (tau_left + tau_right) / 2;
-		nll_mid = get_nll(tau_mid, meas);
+		nll_mid = get_nll(tau_mid, measurements);
 
 		//check if nll is within tolerance of desired nll value
 		if (abs(nll_mid - nll_des) <= tolerance)
@@ -251,16 +247,16 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 }
 
 //initialise values for x and y arrays
-void init(double x[], double y[], const double meas[][2]) {
+void init(double x[], double y[], const double measurements[][2]) {
 	x[0] = 0.22;
 	x[1] = 0.55;
 	x[2] = 0.63;
 	x[3] = 6.000;
 	
-	y[0] = get_nll(x[0], meas);
-	y[1] = get_nll(x[1], meas);
-	y[2] = get_nll(x[2], meas);
-	y[3] = get_nll(x[3], meas);
+	y[0] = get_nll(x[0], measurements);
+	y[1] = get_nll(x[1], measurements);
+	y[2] = get_nll(x[2], measurements);
+	y[3] = get_nll(x[3], measurements);
 }
 
 //initialise values for x and y arrays for cosh(x)
@@ -284,9 +280,9 @@ void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 	
 
 //get location of the parabola's minimum
-void get_min(const double A, const double B, double x[], double y[], const double meas[][2]) {
+void get_min(const double A, const double B, double x[], double y[], const double measurements[][2]) {
 	x[3] = (B * (x[0] + x[1]) - A) / (2 * B);
-	y[3] = get_nll(x[3], meas);
+	y[3] = get_nll(x[3], measurements);
 	//y[3] = cosh(x[3]);
 }
 
@@ -353,10 +349,10 @@ void discard_max(double x[], double y[]) {
 }
 
 //MULTIDIMENSIONAL MINIMISER
-int multimin(const double meas[][2]) {
+int multimin(const double measurements[][2]) {
 	//put measured data into "par"
 	double par[20000];
-	meas_to_par(par, meas);
+	measurements_to_par(par, measurements);
 
 	const gsl_multimin_fminimizer_type *T = 
 		gsl_multimin_fminimizer_nmsimplex2;
@@ -375,7 +371,7 @@ int multimin(const double meas[][2]) {
 		gsl_vector_get(test, 1) << ") = "<< nll << endl;
 	//TEST - compare to result from get_nll
 	cout << "get_nll (for tau = " << gsl_vector_get(test, 1) << ") " << " = " << 
-		get_nll(gsl_vector_get(test, 1), meas) << endl;
+		get_nll(gsl_vector_get(test, 1), measurements) << endl;
 	*/	
 
 	size_t iter = 0;
@@ -462,20 +458,20 @@ double my_f(const gsl_vector *v, void *params) {
 }
 
 //put measured values into array "par"
-void meas_to_par(double par[], const double meas[][2]) {
+void measurements_to_par(double par[], const double measurements[][2]) {
 	for(int i = 0; i < 10000; i++) {
 		int index_t = 2 * i;
 		int index_sigma = 2 * i + 1;
 
-		par[index_t] = meas[i][0];
-		par[index_sigma] = meas[i][1];
+		par[index_t] = measurements[i][0];
+		par[index_sigma] = measurements[i][1];
 	}
 }
 
 /*
 //read measurements into a gsl_vector v
 //elements alternate between t and sigma
-void meas_to_vector(gsl_vector *v) {
+void measurements_to_vector(gsl_vector *v) {
 	
 	FILE *f = fopen("lifetime.txt", "r");
 	gsl_vector_fscanf(f, v);	
