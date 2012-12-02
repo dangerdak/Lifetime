@@ -65,3 +65,5 @@ void meas_to_vector(gsl_vector *v);
 //define function to be minimised
 double my_f(const gsl_vector *v, void *params);
 	
+//put measured values into array "par"
+void meas_to_par(double par[], const double meas[][2]);

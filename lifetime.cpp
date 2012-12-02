@@ -354,22 +354,29 @@ void discard_max(double x[], double y[]) {
 
 //MULTIDIMENSIONAL MINIMISER
 int multimin(const double meas[][2]) {
-	//put measured data into "v"
-	gsl_vector *v = gsl_vector_alloc(20000);
-	meas_to_vector(v);
-
-	//put a and tau into "params"
-	double par[2];
-	double a_initial = 1;
-	double tau_initial = 0.5;
-	par[0] = a_initial;
-	par[1] = tau_initial;
+	//put measured data into "par"
+	double par[20000];
+	meas_to_par(par, meas);
 
 	const gsl_multimin_fminimizer_type *T = 
 		gsl_multimin_fminimizer_nmsimplex2;
 	gsl_multimin_fminimizer *s = NULL;
 	gsl_vector *ss, *x;
 	gsl_multimin_function minex_func;
+	
+	/*
+	gsl_vector *test;
+	test = gsl_vector_alloc(2);
+	gsl_vector_set(test, 0, 1);
+	gsl_vector_set(test, 1, 0.5);
+	double nll = my_f(test, par);
+	//TEST - check NLL value from my_f
+	cout << "NLL (for a = " << gsl_vector_get(test, 0) << " and tau = " << 
+		gsl_vector_get(test, 1) << ") = "<< nll << endl;
+	//TEST - compare to result from get_nll
+	cout << "get_nll (for tau = " << gsl_vector_get(test, 1) << ") " << " = " << 
+		get_nll(gsl_vector_get(test, 1), meas) << endl;
+	*/	
 
 	size_t iter = 0;
 	int status;
@@ -380,9 +387,9 @@ int multimin(const double meas[][2]) {
 	gsl_vector_set(x, 0, 0.7);
 	gsl_vector_set(x, 1, 0.5);
 
-	// Set initial step sizes to 1
+	// Set initial step sizes to 0.2
 	ss = gsl_vector_alloc(2);
-	gsl_vector_set_all(ss, 1.0);
+	gsl_vector_set_all(ss, 0.2);
 
 	// Initialize method and iterate
 	minex_func.n = 2;
@@ -412,7 +419,7 @@ int multimin(const double meas[][2]) {
 				s->fval, size);*/
 		cout << iter << " " << gsl_vector_get(s->x, 0) << " " << 
 			gsl_vector_get(s->x, 1) << " f()=" << s->fval << " size=" << 
-			size=size << endl;
+			size << endl;
 	}
 	while (status == GSL_CONTINUE && iter < 100);
 
@@ -423,18 +430,15 @@ int multimin(const double meas[][2]) {
 	return status;
 }
 
-	/*double nll = my_f(v, params);
-	cout << "NLL (for a = " << a_initial << " and tau = " << tau_initial <<
-		") = "<< nll << endl;
-	//TEST - compare to result from get_nll
-	cout << "get_nll (for tau = " << tau_initial << ") " << " = " << 
-		get_nll(tau_initial, meas) << endl;
-		*/
-
 
 //define function to be minimised
 double my_f(const gsl_vector *v, void *params) {
+	double a, tau;
 	double *p = (double *)params;
+
+	a = gsl_vector_get(v, 0);
+	tau = gsl_vector_get(v, 1);
+
 	double nll_total = 0;
 	int index_sigma = 0;
 	int index_t = 0;
@@ -442,12 +446,12 @@ double my_f(const gsl_vector *v, void *params) {
 		index_t = 2 * i;
 		index_sigma = 2 * i + 1;
 
-		double t = abs(gsl_vector_get(v, index_t));
-		double sigma = gsl_vector_get(v, index_sigma);
+		double t = abs(p[index_t]);
+		double sigma = p[index_sigma];
 
-		double P_total = get_P_total(p[0], p[1], t, sigma);
+		double P_total = get_P_total(a, tau, t, sigma);
 		nll_total -= log(P_total);
-		/* //TEST - do t and sigma correspond to datafile
+		/*//TEST - do t and sigma correspond to datafile
 		if (i > 9995) {
 		cout << "t = " << t << endl;
 		cout << "sigma = " << sigma << endl; 
@@ -457,6 +461,18 @@ double my_f(const gsl_vector *v, void *params) {
 	return nll_total;
 }
 
+//put measured values into array "par"
+void meas_to_par(double par[], const double meas[][2]) {
+	for(int i = 0; i < 10000; i++) {
+		int index_t = 2 * i;
+		int index_sigma = 2 * i + 1;
+
+		par[index_t] = meas[i][0];
+		par[index_sigma] = meas[i][1];
+	}
+}
+
+/*
 //read measurements into a gsl_vector v
 //elements alternate between t and sigma
 void meas_to_vector(gsl_vector *v) {
@@ -465,6 +481,6 @@ void meas_to_vector(gsl_vector *v) {
 	gsl_vector_fscanf(f, v);	
 	fclose(f);
 
-	/*for(int i = 0; i < 10; i++) {
-		printf("%g\n", gsl_vector_get(v,i)); TEST */
-}
+	for(int i = 0; i < 10; i++) {
+		printf("%g\n", gsl_vector_get(v,i)); TEST 
+} */
