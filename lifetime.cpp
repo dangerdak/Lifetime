@@ -77,36 +77,33 @@ double get_P_total(const double a, const double tau, const double t, const doubl
 
 
 //function to output NLL for different tau values
-void nll_tau(const double measurements[][2]) {
-	double tau_min = 0.42;
-	double d_tau = 0.00001;
-	double tau_max = 0.431;
-	//find appropriate k_max for desired tau_max
-	double k_max = (tau_max - tau_min) / d_tau; 
+void nll_vs_tau(const double tau_min, const double d_tau, 
+		const double tau_max, const double measurements[][2]) {
+	//find appropriate number of iterations for desired tau_max
 	//always round up so desired range is included 
-	k_max = round(0.60 + k_max); 
+	const int i_max = ceil((tau_max - tau_min) / d_tau); 
 
-	ofstream nllfile;
-	nllfile.open("nllfunction.txt");
+	ofstream nll_file;
+	nll_file.open("nll_function.txt");
 
 	//only proceed if nll_file opened successfully
-	if (nllfile.fail()) {
-		cerr << "ERROR: find_nll could not open nllfunction.txt \n";
+	if (nll_file.fail()) {
+		cerr << "ERROR: find_nll could not open nll_function.txt \n";
 		exit(1);
 	}
 
-	double tau_k = tau_min;
-	for(int k = 0; k < k_max; k++) { //run through tau values	
-		nllfile << tau_k << " " << get_nll(tau_k, measurements) << endl;	
-		tau_k += d_tau;
-	} //finish running through tau values
-	nllfile.close();
+	double tau_i = tau_min;
+	for(int i = 0; i < i_max; i++) //run through tau values	
+		nll_file << tau_i << " " << get_nll(tau_i, measurements) << endl;	
+	//finish running through tau values
+	nll_file.close();
 }
 
 //find value of NLL for given tau
 double get_nll(const double tau, const double measurements[][2]) {
 	double nll = 0.00;
-	int sample_size = 10000;
+	//simulate having different sample sizes by changing "sample_size"
+	const int sample_size = 10000;
 		for(int i = 0; i < sample_size; i++) { //run through measurements
 			int index = i % 10000;
 			double t = abs(measurements[index][0]);
@@ -119,8 +116,13 @@ double get_nll(const double tau, const double measurements[][2]) {
 }	
 
 //parabolic minimiser
+//using parabola described by
+//g(x) = y[0] + A*(x - x[0]) + B*(x - x[0])*(x - x[1])
 void parabolic_minimiser(const double measurements[][2]) {
 	cout << "\nPARABOLIC MINIMISATION" << endl;
+	//arrays x and y contain coordinates 
+	//for the 3 points to which the parabola is fitted
+	//and for the minimum of the parabola (in the final element)
 	double x[4];
 	double y[4];
 	
@@ -128,23 +130,25 @@ void parabolic_minimiser(const double measurements[][2]) {
 	double B = 0;
 	
 	//count number of iterations
-	int iterations =0;
+	int iterations = 0;
 	double xmin;
-	double xmin_prev;
+	double xmin_previous;
 
 	//initialise x and y values
 	init(x, y, measurements);
 
 	do {
 		find_coeffs(A, B, x, y);
-		xmin_prev = x[3];
+		xmin_previous = x[3];
+		
 		get_min(A, B, x, y, measurements);
 		xmin = x[3]; 
+
 		discard_max(x, y);
 		iterations++;
 	} 
 	//specify convergence criterion
-	while (abs(xmin - xmin_prev) > 0.000001);
+	while (abs(xmin - xmin_previous) > 0.000001);
 
 	cout << "Minimum value of NLL = " << y[3] << endl;
 	cout << "tau-value at minimum = " << xmin << endl;
@@ -159,19 +163,20 @@ void stdev_parabolic(const double A, const double B, const double xmin,
 		const double x0, const double x1, const double y0, 
 		const double y3) {
 	cout << "\nSTANDARD DEVIATION BASED ON LATEST PARABOLIC ESTIMATE" << endl;
-	double nll_stdv = y3 + 0.5;
+	const double nll_stdv = y3 + 0.5;
+
+	//use quadratic formula to find tau value at nll_stdv
+	//for function of form ax^2 + bx + c = 0
 	const double a = B;
 	const double b = A - B * x0 - B * x1;
 	const double c = B * x0 * x1 - A * x0 + y0 - nll_stdv;
-
-	//use quadratic formula to find tau value at nll_stdv
-	double stdev = (-b + sqrt(b * b - 4 * a * c)) / (2 * a) - xmin;
+	const double stdev = (-b + sqrt(b * b - 4 * a * c)) / (2 * a) - xmin;
 
 	cout << "The NLL-value being used is " << nll_stdv << endl;
-	cout << "stdev_para = " << stdev << endl;
+	cout << "stdev_parabolic_estimate = " << stdev << endl;
 }
 
-//find and output standard deviations based on tau_plus & tau_minus
+//find and output standard deviations based on change in NLL
 void stdev_nll(const double xmin, const double y3, const double measurements[][2]) {
 	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
 	const double nll_stdev = y3 + 0.5;
@@ -350,6 +355,7 @@ void discard_max(double x[], double y[]) {
 
 //MULTIDIMENSIONAL MINIMISER
 int multimin(const double measurements[][2]) {
+	cout << "\n2-D MINIMISATION" << endl;
 	//put measured data into "par"
 	double par[20000];
 	measurements_to_par(par, measurements);
@@ -360,20 +366,6 @@ int multimin(const double measurements[][2]) {
 	gsl_vector *ss, *x;
 	gsl_multimin_function minex_func;
 	
-	/*
-	gsl_vector *test;
-	test = gsl_vector_alloc(2);
-	gsl_vector_set(test, 0, 1);
-	gsl_vector_set(test, 1, 0.5);
-	double nll = my_f(test, par);
-	//TEST - check NLL value from my_f
-	cout << "NLL (for a = " << gsl_vector_get(test, 0) << " and tau = " << 
-		gsl_vector_get(test, 1) << ") = "<< nll << endl;
-	//TEST - compare to result from get_nll
-	cout << "get_nll (for tau = " << gsl_vector_get(test, 1) << ") " << " = " << 
-		get_nll(gsl_vector_get(test, 1), measurements) << endl;
-	*/	
-
 	size_t iter = 0;
 	int status;
 	double size;
@@ -447,11 +439,6 @@ double my_f(const gsl_vector *v, void *params) {
 
 		double P_total = get_P_total(a, tau, t, sigma);
 		nll_total -= log(P_total);
-		/*//TEST - do t and sigma correspond to datafile
-		if (i > 9995) {
-		cout << "t = " << t << endl;
-		cout << "sigma = " << sigma << endl; 
-		}*/
 	}
 
 	return nll_total;
@@ -467,16 +454,3 @@ void measurements_to_par(double par[], const double measurements[][2]) {
 		par[index_sigma] = measurements[i][1];
 	}
 }
-
-/*
-//read measurements into a gsl_vector v
-//elements alternate between t and sigma
-void measurements_to_vector(gsl_vector *v) {
-	
-	FILE *f = fopen("lifetime.txt", "r");
-	gsl_vector_fscanf(f, v);	
-	fclose(f);
-
-	for(int i = 0; i < 10; i++) {
-		printf("%g\n", gsl_vector_get(v,i)); TEST 
-} */
