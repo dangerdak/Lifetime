@@ -11,7 +11,7 @@ void read_data(double measurements[][2]);
 void calculate_pdf(const double tau, const double sigma, 
 		const double measurements[][2]); 
 
-//function to get P (of signal) for given tau and measurement
+//find P (of signal) for given tau and measurement
 double get_P_signal(const double tau, const double t, const double sigma);
 
 //find P for background for a given measurement
@@ -55,7 +55,7 @@ void stdev_parabolic(const double A, const double B, const double xmin,
 		const double x0, const double x1, const double y0, 
 		const double y3); 
 
-//find maximum y-value
+//find maximum value in array y
 double find_max(const double y[]);
 	
 //discard maximum y-value
@@ -65,10 +65,12 @@ void discard_max(double x[], double y[]);
 void stdev_nll(const double xmin, const double y3, const double measurements[][2]);
 
 //bisection method to find tau_plus and tau_minus from NLL
+//i.e. the tau-values one standard deviation above/below the minimum
 double bisect(const double nll_des, const double tau_outer, const double tau_inner, 
 		const double measurements[][2]);
 
 //MULTIDIMENSIONAL MINIMISER
+//minimise function described by "my_f"
 int multimin(const double measurements[][2]);
 
 //read measurements into a gsl_vector which alternates between t and sigma
