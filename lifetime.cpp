@@ -72,6 +72,10 @@ double get_P_total(const double a, const double tau, const double t, const doubl
 	P_background = get_P_background(t, sigma);
 	P_total= a * P_signal + (1 - a) * P_background;
 	
+	//output warning if total pdf is negative
+	if (abs(P_total) != P_total) 
+		cout << "WARNING: Total pdf negative" << endl;
+
 	return P_total;
 }
 
@@ -370,7 +374,7 @@ int multimin(const double measurements[][2]) {
 	int status;
 	double size;
 
-	// Starting point - WHAT SHOULD THE X-VALUES BE????
+	// Starting point
 	x = gsl_vector_alloc(2);
 	gsl_vector_set(x, 0, 0.7);
 	gsl_vector_set(x, 1, 0.5);
@@ -395,7 +399,7 @@ int multimin(const double measurements[][2]) {
 			break;
 
 		size = gsl_multimin_fminimizer_size(s);
-		status = gsl_multimin_test_size(size, 0.01);
+		status = gsl_multimin_test_size(size, 0.000001);
 
 		if (status == GSL_SUCCESS) {
 			printf ("Converged to minimum at:\n");
@@ -444,7 +448,7 @@ double my_f(const gsl_vector *v, void *params) {
 	return nll_total;
 }
 
-//put measured values into array "par"
+//put measured values into 1-D array "par"
 void measurements_to_par(double par[], const double measurements[][2]) {
 	for(int i = 0; i < 10000; i++) {
 		int index_t = 2 * i;
