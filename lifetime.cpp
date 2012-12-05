@@ -154,13 +154,11 @@ void parabolic_minimiser(const double measurements[][2]) {
 		
 		get_min(A, B, x, y, measurements);
 		xmin = x[3]; 
-		std::cout << x[0] << '\t' << x[1] << '\t' << x[2] << std::endl ;
-		std::cout << y[0] << '\t' << y[1] << '\t' << y[2] << std::endl ;
 		discard_max(x, y);
 		iterations++;
 	} 
 	//specify convergence criterion
-	while ( iterations < 10 ) ; // fabs(xmin - xmin_previous) > 0.000001);
+	while (abs(xmin - xmin_previous) > 0.000001);
 
 	cout << "Minimum value of NLL = " << y[3] << endl;
 	cout << "tau-value at minimum = " << xmin << endl;
@@ -446,13 +444,10 @@ double my_f(const gsl_vector *v, void *params) {
 		index_t = 2 * i;
 		index_sigma = 2 * i + 1;
 
-		double t = abs(p[index_t]);
+		double t = p[index_t];
 		double sigma = p[index_sigma];
 
 		double P_total = get_P_total(a, tau, t, sigma);
-		//a shouldn't be > 1 so make NLL very high for this case
-		if (a > 1)
-			return 10000000000;
 		//TEST REAL NUMBER
 		if (isnan(log(P_total))) {
 			cout << "WARNING: LOG(PDF) IS NAN" << endl;
