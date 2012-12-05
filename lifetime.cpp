@@ -2,6 +2,7 @@
 #include <fstream>
 #include <gsl/gsl_sf_erf.h>
 #include <cmath>
+#include <math.h> //to test for nans
 #include <cstdlib> //so I can use "exit"
 #include <iostream>
 #include <gsl/gsl_multimin.h>
@@ -69,6 +70,11 @@ double get_P_background(const double t, const double sigma) {
 double get_P_total(const double a, const double tau, const double t, const double sigma) {
 	double P_signal, P_background, P_total;
 	P_signal = get_P_signal(tau, t, sigma);
+
+	//output warning if pdf for signal is negative
+	if (abs(P_signal) != P_signal)
+		cout << "WARNING: pdf for signal negative" << endl;
+
 	P_background = get_P_background(t, sigma);
 	P_total= a * P_signal + (1 - a) * P_background;
 	
@@ -140,6 +146,7 @@ void parabolic_minimiser(const double measurements[][2]) {
 
 	//initialise x and y values
 	init(x, y, measurements);
+	//init_cosh(x, y);
 
 	do {
 		find_coeffs(A, B, x, y);
@@ -258,9 +265,9 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 //initialise values for x and y arrays
 void init(double x[], double y[], const double measurements[][2]) {
 	x[0] = 0.22;
-	x[1] = 0.55;
+	x[1] = 0.35;
 	x[2] = 0.63;
-	x[3] = 6.000;
+	x[3] = 5.000;
 	
 	y[0] = get_nll(x[0], measurements);
 	y[1] = get_nll(x[1], measurements);
@@ -399,7 +406,7 @@ int multimin(const double measurements[][2]) {
 			break;
 
 		size = gsl_multimin_fminimizer_size(s);
-		status = gsl_multimin_test_size(size, 0.000001);
+		status = gsl_multimin_test_size(size, 0.0001);
 
 		if (status == GSL_SUCCESS) {
 			printf ("Converged to minimum at:\n");
@@ -442,7 +449,16 @@ double my_f(const gsl_vector *v, void *params) {
 		double sigma = p[index_sigma];
 
 		double P_total = get_P_total(a, tau, t, sigma);
+		//a shouldn't be > 1 so make NLL very high for this case
+		if (a > 1)
+			return 10000000000;
+		//TEST REAL NUMBER
+		if (isnan(log(P_total))) {
+			cout << "WARNING: LOG(PDF) IS NAN" << endl;
+		}
 		nll_total -= log(P_total);
+		
+		
 	}
 
 	return nll_total;

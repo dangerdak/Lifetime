@@ -20,6 +20,6 @@ int main() {
 	calculate_pdf(tau, sigma, measurements);
 	nll_vs_tau(tau_min, d_tau, tau_max, measurements);
 	parabolic_minimiser(measurements);
-	multimin(measurements);
+//	multimin(measurements);
 	return 0;
 }	
