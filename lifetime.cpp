@@ -116,7 +116,7 @@ double get_nll(const double tau, const double measurements[][2]) {
 	const int sample_size = 10000;
 		for(int i = 0; i < sample_size; i++) { //run through measurements
 			int index = i % 10000;
-			double t = abs(measurements[index][0]);
+			double t = measurements[index][0];
 			double sigma = measurements[index][1];
 
 			double P_signal = get_P_signal(tau, t, sigma);
@@ -154,12 +154,13 @@ void parabolic_minimiser(const double measurements[][2]) {
 		
 		get_min(A, B, x, y, measurements);
 		xmin = x[3]; 
-
+		std::cout << x[0] << '\t' << x[1] << '\t' << x[2] << std::endl ;
+		std::cout << y[0] << '\t' << y[1] << '\t' << y[2] << std::endl ;
 		discard_max(x, y);
 		iterations++;
 	} 
 	//specify convergence criterion
-	while (abs(xmin - xmin_previous) > 0.000001);
+	while ( iterations < 10 ) ; // fabs(xmin - xmin_previous) > 0.000001);
 
 	cout << "Minimum value of NLL = " << y[3] << endl;
 	cout << "tau-value at minimum = " << xmin << endl;
@@ -297,12 +298,12 @@ void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 
 //get location of the parabola's minimum
 void get_min(const double A, const double B, double x[], double y[], const double measurements[][2]) {
-	x[3] = (B * (x[0] + x[1]) - A) / (2 * B);
+	x[3] = (B * (x[0] + x[1]) - A) / (2. * B);
 	y[3] = get_nll(x[3], measurements);
 	//y[3] = cosh(x[3]);
 }
 
-//find location of maximum
+//find value of maximum
 double find_max(const double y[]) {
 	double y_max = y[0];
 	if (y[1] > y_max)
