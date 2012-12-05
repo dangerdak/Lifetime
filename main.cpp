@@ -5,7 +5,7 @@ using namespace std;
 int main() {
 
 	//constants used with calculate_pdf
-	const double tau = 0.01;
+	const double tau = 0.21;
 	const double sigma = 0.2;
 	
 	//constants used with nll_vs_tau
@@ -18,8 +18,8 @@ int main() {
 	
 	read_data(measurements);
 	calculate_pdf(tau, sigma, measurements);
-	nll_vs_tau(tau_min, d_tau, tau_max, measurements);
-	parabolic_minimiser(measurements);
-	multimin(measurements);
+//	nll_vs_tau(tau_min, d_tau, tau_max, measurements);
+//	parabolic_minimiser(measurements);
+//	multimin(measurements);
 	return 0;
 }	

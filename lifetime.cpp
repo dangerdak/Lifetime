@@ -41,16 +41,21 @@ void calculate_pdf(const double tau, const double sigma,
 	}
 	//find P for each measurement for given tau and sigma 
 	//and output into "fit_function.txt"
-	for (int k = 0; k < 10000; k++) {
-		double t = abs(measurements[k][0]);
-		fit_file << t << " " << get_P_signal(tau, t, sigma) << endl;
+	double area = 0;
+	for (int i = 0; i < 10000; i++) {
+		double t = measurements[i][0];
+		double P = get_P_signal(tau, t, sigma); 
+		fit_file << t << " " << P << endl;
+		area += t * P;
 	}
 	fit_file.close();
+	//output area under curve
+	cout << "Area under fit function = " << area << endl;
 }
 
 //find P for signal for a given measurement
 double get_P_signal(const double tau, const double t, const double sigma) {
-	double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
+	const double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
 	double P_signal = exp((sigma * sigma)/(2 * tau * tau) - 
 			(t / tau)) * erfc(err_input) / (2 * tau);
 
