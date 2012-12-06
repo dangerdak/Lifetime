@@ -5,14 +5,14 @@ using namespace std;
 int main() {
 
 	//constants used with calculate_pdf
-	const double tau = 0.21;
-	const double sigma = 0.2;
+	const double tau = 0.80;
+	const double sigma = 0.02;
 	
 	//constants used with nll_vs_tau
 	//tau_min and tau_max must bracket minimum
-	const double tau_min = 0.429;
-	const double d_tau = 0.00001;
-	const double tau_max = 0.431;
+	//const double tau_min = 0.429;
+//	const double d_tau = 0.00001;
+//	const double tau_max = 0.431;
 
 	double measurements[10000][2];
 	

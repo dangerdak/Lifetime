@@ -10,6 +10,17 @@ void read_data(double measurements[][2]);
 //with time in column 0, value of pdf in column 1
 void calculate_pdf(const double tau, const double sigma, 
 		const double measurements[][2]); 
+//find max and min t
+void find_max_min_t(double &max_t, double &min_t, 
+		const double measurements[][2]);
+
+//find area
+double calculate_area(const double tau, const double sigmai, 
+		const double upper_limit_t, const double lower_limit_t);
+	
+//evaluate integral
+double evaluate_integral(const double tau, const double sigma, 
+		const double t);
 
 //find P (of signal) for given tau and measurement
 double get_P_signal(const double tau, const double t, const double sigma);

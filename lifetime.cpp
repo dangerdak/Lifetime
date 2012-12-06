@@ -39,20 +39,57 @@ void calculate_pdf(const double tau, const double sigma,
 		cerr << "ERROR: calculate_pdf could not open fit_function.txt \n";
 		exit(1);
 	}
+	//find range of t-values in order to integrate pdf
+	double max_t = 0;
+	double min_t = 0;
+	find_max_min_t(max_t, min_t, measurements);
+	double area = calculate_area(tau, sigma, max_t, min_t);
+
 	//find P for each measurement for given tau and sigma 
-	//and output into "fit_function.txt"
-	double area = 0;
+	//normalise and output into "fit_function.txt"
 	for (int i = 0; i < 10000; i++) {
 		double t = measurements[i][0];
 		double P = get_P_signal(tau, t, sigma); 
-		fit_file << t << " " << P << endl;
-		area += t * P;
+
+		double P_norm = P / area;
+		fit_file << t << " " << P_norm << endl;
 	}
 	fit_file.close();
-	//output area under curve
-	cout << "Area under fit function = " << area << endl;
 }
 
+//find max and min t
+void find_max_min_t(double &max_t, double &min_t, 
+		const double measurements[][2]) {
+	for(int i = 0; i < 10000; i++) {
+		double t = measurements[i][0];
+		if (min_t > t)
+			min_t = t;
+		if (max_t < t)
+			max_t = t;
+	}
+	cout << "max_t = " << max_t << ", min_t = " << min_t << endl;
+}
+
+//find area
+double calculate_area(const double tau, const double sigma, 
+		const double upper_limit_t, const double lower_limit_t) {
+	double A = evaluate_integral(tau, sigma, 1000) - 
+		evaluate_integral(tau, sigma, -100);
+	cout << "A = " << A << endl;
+	return A;
+}
+
+//evaluate integral
+double evaluate_integral(const double tau, const double sigma, 
+		const double t) {
+	double A = erf(t / (sqrt(2) * sigma)) / 2 -
+		sqrt(exp((sigma * sigma / tau * tau) - 
+		(2 * t / tau ))) * 
+		erfc(((sigma / tau) - (t / sigma)) / sqrt(2));
+
+	return A;
+}
+	
 //find P for signal for a given measurement
 double get_P_signal(const double tau, const double t, const double sigma) {
 	const double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
