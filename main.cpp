@@ -19,7 +19,7 @@ int main() {
 	read_data(measurements);
 	calculate_pdf(tau, sigma, measurements);
 	nll_vs_tau(tau_min, d_tau, tau_max, measurements);
-//	parabolic_minimiser(measurements);
-//	multimin(measurements);
+	parabolic_minimiser(measurements);
+	multimin(measurements);
 	return 0;
 }	

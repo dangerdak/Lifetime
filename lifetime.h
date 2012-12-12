@@ -61,10 +61,8 @@ void find_coeffs(double &A, double &B, const double x[],
 void get_min(const double A, const double B, double x[], double y[], 
 		const double measurements[][2]);
 
-//find and output standard deviation based on latest parabolic estimate
-void stdev_parabolic(const double A, const double B, const double xmin, 
-		const double x0, const double x1, const double y0, 
-		const double y3); 
+//find standard deivation based on curvature of parabolic estimate
+void stdev_curvature(const double B);
 
 //find maximum value in array y
 double find_max(const double y[]);
@@ -89,6 +87,25 @@ void measurements_to_vector(gsl_vector *v);
 	
 //define function to be minimised
 double my_f(const gsl_vector *v, void *params);
-	
+
+//get nll total for case where it depends on tau and a
+double get_nll_total(double a, const double tau, 
+		void *params);
+
+//gradient of f, df = (df/da, df/dtau)
+void my_df(const gsl_vector *v, void *params, gsl_vector *df);
+
+//compute both fdf and df together
+void my_fdf(const gsl_vector *x, void *params, double *f, 
+		gsl_vector *df);
+
 //put measured values into 1-D array "par"
 void measurements_to_par(double par[], const double measurements[][2]);
+
+//use central difference scheme to estimate derivative of function
+double get_dfda(const double h, const double a, const double tau, 
+		void *params);
+	
+double get_dfdtau(const double h, const double a, const double tau, 
+		void *params);
+	
