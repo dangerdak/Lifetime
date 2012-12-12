@@ -39,10 +39,10 @@ void calculate_pdf(const double tau, const double sigma,
 		cerr << "ERROR: calculate_pdf could not open fit_function.txt \n";
 		exit(1);
 	}
-	//find range of t-values in order to integrate pdf
-	double max_t = 0;
-	double min_t = 0;
-	find_max_min_t(max_t, min_t, measurements);
+	//specify range of t-values in order to integrate pdf
+	//(want to be effectively integrating over all possible time)
+	double max_t = 1000;
+	double min_t = -10;
 	double area = calculate_area(tau, sigma, max_t, min_t);
 
 	//find P for each measurement for given tau and sigma 
@@ -57,25 +57,12 @@ void calculate_pdf(const double tau, const double sigma,
 	fit_file.close();
 }
 
-//find max and min t
-void find_max_min_t(double &max_t, double &min_t, 
-		const double measurements[][2]) {
-	for(int i = 0; i < 10000; i++) {
-		double t = measurements[i][0];
-		if (min_t > t)
-			min_t = t;
-		if (max_t < t)
-			max_t = t;
-	}
-	cout << "max_t = " << max_t << ", min_t = " << min_t << endl;
-}
-
 //find area
 double calculate_area(const double tau, const double sigma, 
 		const double upper_limit_t, const double lower_limit_t) {
-	double A = evaluate_integral(tau, sigma, 1000) - 
-		evaluate_integral(tau, sigma, -100);
-	cout << "A = " << A << endl;
+	double A = evaluate_integral(tau, sigma, upper_limit_t) - 
+		evaluate_integral(tau, sigma, lower_limit_t);
+	cout << "Integral of PDF =  " << A << endl;
 	return A;
 }
 
@@ -145,9 +132,10 @@ void nll_vs_tau(const double tau_min, const double d_tau,
 	}
 
 	double tau_i = tau_min;
-	for(int i = 0; i < i_max; i++) //run through tau values	
+	for(int i = 0; i < i_max; i++) {//run through tau values	
 		nll_file << tau_i << " " << get_nll(tau_i, measurements) << endl;	
-	//finish running through tau values
+		tau_i += d_tau;
+	}	//finish running through tau values
 	nll_file.close();
 }
 
