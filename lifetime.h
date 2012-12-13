@@ -15,7 +15,7 @@ void find_max_min_t(double &max_t, double &min_t,
 		const double measurements[][2]);
 
 //find area
-double calculate_area(const double tau, const double sigmai, 
+double calculate_area(const double tau, const double sigma, 
 		const double upper_limit_t, const double lower_limit_t);
 	
 //evaluate integral
@@ -109,3 +109,18 @@ double get_dfda(const double h, const double a, const double tau,
 double get_dfdtau(const double h, const double a, const double tau, 
 		void *params);
 	
+//approximate dfda_da using cds
+double get_dfda_da(const double h, const double a, const double tau, 
+		void *params);
+
+//dfda_dtau
+double get_dfda_dtau(const double h, const double a, const double tau, 
+		void *params);
+
+//dfdtau_dtau
+double get_dfdtau_dtau(const double h, const double a, const double tau, 
+		void *params);
+
+//dfdtau_da
+double get_dfdtau_da(const double h, const double a, const double tau, 
+		void *params);

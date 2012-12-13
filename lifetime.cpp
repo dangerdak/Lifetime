@@ -22,9 +22,9 @@ void read_data(double measurements[][2]) {
 	//put time measurements in column 0
 	//and associated errors in column 1
 	for (int i = 0; i < 10000; i++) 
-	      for(int j = 0; j < 2; j++) 
-		      data_file >> measurements[i][j];
-	      
+		for(int j = 0; j < 2; j++) 
+			data_file >> measurements[i][j];
+
 	data_file.close();
 }
 
@@ -71,12 +71,12 @@ double evaluate_integral(const double tau, const double sigma,
 		const double t) {
 	double A = erf(t / (sqrt(2) * sigma)) / 2 -
 		sqrt(exp((sigma * sigma / tau * tau) - 
-		(2 * t / tau ))) * 
+					(2 * t / tau ))) * 
 		erfc(((sigma / tau) - (t / sigma)) / sqrt(2));
 
 	return A;
 }
-	
+
 //find P for signal for a given measurement
 double get_P_signal(const double tau, const double t, const double sigma) {
 	const double err_input = ((sigma / tau) - (t / sigma)) / sqrt(2);
@@ -106,7 +106,7 @@ double get_P_total(const double a, const double tau, const double t, const doubl
 
 	P_background = get_P_background(t, sigma);
 	P_total= a * P_signal + (1 - a) * P_background;
-	
+
 	//output warning if total pdf is negative
 	if (abs(P_total) != P_total) { 
 		cout << "WARNING: Total pdf negative" << endl;
@@ -145,14 +145,14 @@ double get_nll(const double tau, const double measurements[][2]) {
 	double nll = 0.00;
 	//simulate having different sample sizes by changing "sample_size"
 	const int sample_size = 10000;
-		for(int i = 0; i < sample_size; i++) { //run through measurements
-			int index = i % 10000;
-			double t = measurements[index][0];
-			double sigma = measurements[index][1];
+	for(int i = 0; i < sample_size; i++) { //run through measurements
+		int index = i % 10000;
+		double t = measurements[index][0];
+		double sigma = measurements[index][1];
 
-			double P_signal = get_P_signal(tau, t, sigma);
-			nll -= log(P_signal);
-		} //finish running through measurements
+		double P_signal = get_P_signal(tau, t, sigma);
+		nll -= log(P_signal);
+	} //finish running through measurements
 	return nll;
 }	
 
@@ -166,10 +166,10 @@ void parabolic_minimiser(const double measurements[][2]) {
 	//and for the minimum of the parabola (in the final element)
 	double x[4];
 	double y[4];
-	
+
 	double A = 0;
 	double B = 0;
-	
+
 	//count number of iterations
 	int iterations = 0;
 	double xmin;
@@ -182,7 +182,7 @@ void parabolic_minimiser(const double measurements[][2]) {
 	do {
 		find_coeffs(A, B, x, y);
 		xmin_previous = x[3];
-		
+
 		get_min(A, B, x, y, measurements);
 		xmin = x[3]; 
 		discard_max(x, y);
@@ -210,13 +210,13 @@ void stdev_nll(const double xmin, const double y3, const double measurements[][2
 	cout << "\nSTANDARD DEVIATION BASED ON CHANGE IN NLL" << endl;
 	const double nll_stdev = y3 + 0.5;
 	double stdev[2];
-	
+
 	//find tau_plus
 	double tau_left = xmin;
 	double tau_right = 5.5;
 	double tau_plus = bisect(nll_stdev, tau_left, tau_right, measurements);
 	cout << "tau_plus = " << tau_plus << "\n" << endl;
-	
+
 	//find tau_minus
 	tau_left = 0.05;
 	tau_right = xmin;
@@ -241,10 +241,10 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 	const double tolerance = 0.001;
 	double i_max = 40;
 	int evals;
-	
+
 	double nll_left = get_nll(tau_left, measurements);
 	double nll_right = get_nll(tau_right, measurements);
-	
+
 	for (int i = 0; i < i_max; i++) {
 		tau_mid = (tau_left + tau_right) / 2;
 		nll_mid = get_nll(tau_mid, measurements);
@@ -272,7 +272,7 @@ double bisect(const double nll_des, double tau_left, double tau_right,
 			cout << "tau_mid = " << tau_mid << endl;
 			return 100;
 		}
-	evals = i;
+		evals = i;
 	}
 	//check nll value
 	cout << "Function evaluated " << evals + 1 << " times." << endl;
@@ -286,7 +286,7 @@ void init(double x[], double y[], const double measurements[][2]) {
 	x[1] = 0.35;
 	x[2] = 0.63;
 	x[3] = 5.000;
-	
+
 	y[0] = get_nll(x[0], measurements);
 	y[1] = get_nll(x[1], measurements);
 	y[2] = get_nll(x[2], measurements);
@@ -311,7 +311,7 @@ void find_coeffs(double &A, double &B, const double x[], const double y[]) {
 	A = (y[1] - y[0]) / (x[1] - x[0]);
 	B = ((y[2] - y[0]) / (x[2] - x[0]) - (y[1] - y[0]) / (x[1] - x[0])) / (x[2] - x[1]);
 }
-	
+
 
 //get location of the parabola's minimum
 void get_min(const double A, const double B, double x[], double y[], const double measurements[][2]) {
@@ -398,24 +398,24 @@ int multimin(const double measurements[][2]) {
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
-	
+
 	// Initialize method and iterate
 	my_func.n = 2;
 	my_func.f = my_f;
 	my_func.df = my_df;
 	my_func.fdf = my_fdf;
 	my_func.params = par;
-	
+
 	// Starting point
 	x = gsl_vector_alloc(2);
-	gsl_vector_set(x, 0, 0.7);
+	gsl_vector_set(x, 0, 0.2);
 	gsl_vector_set(x, 1, 0.5);
 
 	T = gsl_multimin_fdfminimizer_vector_bfgs;
 	s = gsl_multimin_fdfminimizer_alloc(T, 2);
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.00000001, 0.1);
-	
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.1);
+
 	do {
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
@@ -428,22 +428,56 @@ int multimin(const double measurements[][2]) {
 
 		if (status == GSL_SUCCESS) {
 			printf ("Minimum found at:\n");
+			double a_mle = gsl_vector_get(s->x, 0);
+			double tau_mle = gsl_vector_get(s->x, 1);
+
+			//find standard deviations
+			cout << "\nSTANDARD DEVIATIONS" << endl;
+			double h = 0.00005;
+			double dfda_da = get_dfda_da(h, a_mle, tau_mle, 
+					par);
+			double dfda_dtau = get_dfda_dtau(h, a_mle, 
+					tau_mle, par);
+			double dfdtau_dtau = get_dfdtau_dtau(h, a_mle, 
+					tau_mle, par);
+			double dfdtau_da = get_dfdtau_da(h, a_mle, 
+					tau_mle, par);
+			double det_H = dfda_da * 
+			       dfdtau_dtau - dfda_dtau * dfda_dtau; 
+			cout << "determinant = " << det_H << endl;
+			double H11_inverse = dfdtau_dtau / det_H;
+			double H12_inverse = - dfda_dtau / det_H;
+			double H21_inverse = - dfda_dtau / det_H;
+			double H22_inverse = dfda_da / det_H;
+
+			double stdev_a = sqrt(H11_inverse);
+			double stdev_tau = sqrt(H22_inverse);
+
+			cout << "stdev_a = " << stdev_a << endl;
+			cout << "stdev_tau = " << stdev_tau << endl;
+
+
+
 		}
 		/*printf ("%5d %10.3e %10.3e f() = %7.3f size = %.3f\n", 
-				iter, 
-				gsl_vector_get(s->x, 0),
-				gsl_vector_get(s->x, 1),
-				s->fval, size);*/
+		  iter, 
+		  gsl_vector_get(s->x, 0),
+		  gsl_vector_get(s->x, 1),
+		  s->fval, size);*/
 		cout << iter << " " << gsl_vector_get(s->x, 0) << 
 			" " << 
 			gsl_vector_get(s->x, 1) << " NLL=" << 
 			s->f << endl;
+		gsl_vector *grad = gsl_multimin_fdfminimizer_gradient(s);
+		double g0 = gsl_vector_get(grad, 0);
+		double g1 = gsl_vector_get(grad, 1);
+		cout << "Gradient = " << g0 << ", " << g1 << 
+			", " << endl;
 	}
 	while (status == GSL_CONTINUE && iter < 100);
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
-
 	return status;
 }
 
@@ -477,7 +511,7 @@ double get_nll_total(double a, const double tau,
 		//if it is, P_total becomes negative
 		//and nll_total is nan
 		if (a > 1)
-			a = 0.5;
+			a -= 0.5;
 
 		double P_total = get_P_total(a, tau, t, sigma);
 		//TEST REAL NUMBER
@@ -489,11 +523,11 @@ double get_nll_total(double a, const double tau,
 	}
 	return nll_total;
 }
-	
+
 //gradient of f, df = (df/da, df/dtau)
 void my_df(const gsl_vector *v, void *params, gsl_vector *df) {
 	double a, tau; 
-	double h = 0.0001;
+	double h = 0.000001;
 
 	a = gsl_vector_get(v, 0);
 	tau = gsl_vector_get(v, 1);
@@ -525,7 +559,7 @@ void measurements_to_par(double par[], const double measurements[][2]) {
 double get_dfda(const double h, const double a, const double tau, 
 		void *params) {
 	double dfda = (get_nll_total(a + h, tau, params) - 
-		get_nll_total(a - h, tau, params)) / 
+			get_nll_total(a - h, tau, params)) / 
 		(2 * h);
 	return dfda;
 }
@@ -533,9 +567,39 @@ double get_dfda(const double h, const double a, const double tau,
 double get_dfdtau(const double h, const double a, const double tau, 
 		void *params) {
 	double dfdtau = (get_nll_total(a, tau + h, params) - 
-		get_nll_total(a, tau - h, params)) / 
+			get_nll_total(a, tau - h, params)) / 
 		(2 * h);
 	return dfdtau;
 }
 
+//approximate dfda_da using cds
+double get_dfda_da(const double h, const double a, const double tau, 
+		void *params) {
+	double dfda_da = (get_dfda(h, a + h, tau, params) - 
+			get_dfda(h, a - h, tau, params)) / (2 * h);
+	return dfda_da;
+}
 
+//dfda_dtau
+double get_dfda_dtau(const double h, const double a, const double tau, 
+		void *params) {
+	double dfda_dtau = (get_dfda(h, a, tau + h, params) - 
+			get_dfda(h, a, tau - h, params)) / ( 2 * h);
+	return dfda_dtau;
+}
+
+//dfdtau_dtau
+double get_dfdtau_dtau(const double h, const double a, const double tau, 
+		void *params) {
+	double dfdtau_dtau = (get_dfdtau(h, a, tau + h, params) - 
+			get_dfdtau(h, a, tau - h, params)) / ( 2 * h);
+	return dfdtau_dtau;
+}
+
+//dfdtau_da
+double get_dfdtau_da(const double h, const double a, const double tau, 
+		void *params) {
+	double dfdtau_dtau = (get_dfdtau(h, a + h, tau, params) - 
+			get_dfdtau(h, a + h, tau, params)) / ( 2 * h);
+	return dfdtau_dtau;
+}
