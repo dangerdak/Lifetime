@@ -71,12 +71,13 @@ double find_max(const double y[]);
 void discard_max(double x[], double y[]);
 
 //find and output standard deviations based on change in NLL
-void stdev_nll(const double xmin, const double y3, const double measurements[][2]);
+void stdev_nll(const double xmin, const double y3, 
+		const double measurements[][2]);
 
 //bisection method to find tau_plus and tau_minus from NLL
 //i.e. the tau-values one standard deviation above/below the minimum
-double bisect(const double nll_des, const double tau_outer, const double tau_inner, 
-		const double measurements[][2]);
+double bisect(const double nll_des, const double tau_outer, 
+		const double tau_inner, const double measurements[][2]);
 
 //MULTIDIMENSIONAL MINIMISER
 //minimise function described by "my_f"
@@ -124,3 +125,6 @@ double get_dfdtau_dtau(const double h, const double a, const double tau,
 //dfdtau_da
 double get_dfdtau_da(const double h, const double a, const double tau, 
 		void *params);
+
+//for 3d plot
+void nll_a_tau(void *params); 

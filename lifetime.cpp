@@ -396,6 +396,9 @@ int multimin(const double measurements[][2]) {
 	double par[20000];
 	measurements_to_par(par, measurements);
 
+	//output data for 3d plot
+	nll_a_tau(par);
+
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 
@@ -427,7 +430,6 @@ int multimin(const double measurements[][2]) {
 				0.01);
 
 		if (status == GSL_SUCCESS) {
-			printf ("Minimum found at:\n");
 			double a_mle = gsl_vector_get(s->x, 0);
 			double tau_mle = gsl_vector_get(s->x, 1);
 
@@ -457,6 +459,7 @@ int multimin(const double measurements[][2]) {
 			cout << "stdev_tau = " << stdev_tau << endl;
 
 
+			printf ("Minimum found at:\n");
 
 		}
 		/*printf ("%5d %10.3e %10.3e f() = %7.3f size = %.3f\n", 
@@ -603,3 +606,34 @@ double get_dfdtau_da(const double h, const double a, const double tau,
 			get_dfdtau(h, a + h, tau, params)) / ( 2 * h);
 	return dfdtau_dtau;
 }
+
+//for 3d plot
+void nll_a_tau(void *params) {
+	cout << "OUTPUTTING DATA FOR 3D PLOT" << endl;
+	double a = 0.90;
+	double tau = 0.38;
+	
+	ofstream data_file;
+	data_file.open("nll_a_tau.txt");
+
+	//only proceed if data file opened successfully
+	if (data_file.fail()) {
+		cerr << "ERROR: nll_a_tau could not open .txt file\n";
+		exit(1);
+	}
+
+	for (int i = 0; i < 100; i++) {
+		for (int j = 0; j < 100; j++) {
+			double nll = get_nll_total(a, tau, params);
+			data_file << a << " " << tau << " " << nll << 
+				endl;
+			tau += 0.001;
+		}
+		tau = 0.35;
+		a += 0.001;
+	}
+
+	data_file.close();
+	cout << "FINISHED OUTPUTTING 3D PLOT DATA" << endl;
+}
+
